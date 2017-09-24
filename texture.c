@@ -16,10 +16,14 @@ struct Texture* texture_ctorimage(
 	self->raw = IMG_LoadTexture(renderer, path);
 	if(!self->raw)
 	{
-		log_error(IMG_GetError());
+		log_error("%s", IMG_GetError());
+		self->width = 0;
+		self->height = 0;
 	}
-
-	SDL_QueryTexture(self->raw, NULL, NULL, &self->width, &self->height);
+	else
+	{
+		SDL_QueryTexture(self->raw, NULL, NULL, &self->width, &self->height);
+	}
 
 	return self;
 }
@@ -71,7 +75,7 @@ struct Texture* texture_ctortext(
 
 	if(!self->raw)
 	{
-		log_error(SDL_GetError());
+		log_error("%s", SDL_GetError());
 	}
 
 	//NOTE: Line below makes transparency work for two textures on eachother
@@ -143,7 +147,7 @@ struct Texture* texture_copy(
 
 	if(!dest->raw)
 	{
-		log_error(SDL_GetError());
+		log_error("%s", SDL_GetError());
 	}
 
 	//NOTE: Line below makes transparency work for two textures on eachother

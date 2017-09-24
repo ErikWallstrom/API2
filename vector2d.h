@@ -17,11 +17,6 @@ void vector2d_subtract(
 	struct Vector2d* subtrahend, //minuend - subtrahend = difference
 	struct Vector2d* dest
 );
-void vector2d_subtract(
-	struct Vector2d* self, 
-	struct Vector2d* subtrahend, //minuend - subtrahend = difference
-	struct Vector2d* dest
-);
 void vector2d_scale(
 	struct Vector2d* self, 
 	double scalar,

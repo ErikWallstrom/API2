@@ -28,7 +28,7 @@ struct Window* window_ctor(
 
 	if(!self->raw)
 	{
-		log_error(SDL_GetError());
+		log_error("%s", SDL_GetError());
 	}
 	
 	if(isopengl)
@@ -36,7 +36,7 @@ struct Window* window_ctor(
 		self->context = SDL_GL_CreateContext(self->raw);
 		if(!self->context)
 		{
-			log_error(SDL_GetError());
+			log_error("%s", SDL_GetError());
 		}
 
 		if(isvsync)
@@ -59,7 +59,7 @@ struct Window* window_ctor(
 		self->renderer = SDL_CreateRenderer(self->raw, -1, renderflags);
 		if(!self->renderer)
 		{
-			log_error(SDL_GetError());
+			log_error("%s", SDL_GetError());
 		}
 	}
 

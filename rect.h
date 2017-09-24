@@ -22,13 +22,26 @@ struct Rect
 {
 	struct Vector2d pos;
 	double width, height;
-	enum RectRegPoint rpoint;
 };
 
-struct Vector2d rect_getpos(struct Rect* self);
-void rect_setpos(struct Rect* self, struct Vector2d pos);
+struct Rect* rect_ctor(
+	struct Rect* self, 
+	struct Vector2d pos, 
+	enum RectRegPoint rpoint, 
+	double width, 
+	double height
+);
+
+struct Vector2d rect_getpos(struct Rect* self, enum RectRegPoint rpoint);
+void rect_setpos(
+	struct Rect* self, 
+	struct Vector2d pos, 
+	enum RectRegPoint rpoint
+);
+
 int rect_intersects(struct Rect* self, struct Rect* other);
 int rect_intersectspoint(struct Rect* self, double x, double y);
+
 int rect_hitleft(struct Rect* self, double dx, struct Rect* other);
 int rect_hitright(struct Rect* self, double dx, struct Rect* other);
 int rect_hittop(struct Rect* self, double dy, struct Rect* other);

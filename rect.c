@@ -1,100 +1,131 @@
 #include "rect.h"
 #include "log.h"
 
-struct Vector2d rect_getpos(struct Rect* self)
+struct Rect* rect_ctor(
+	struct Rect* self, 
+	struct Vector2d pos, 
+	enum RectRegPoint rpoint, 
+	double width, 
+	double height
+)
 {
 	log_assert(self, "is NULL");
 	log_assert(
-		self->rpoint <= RECTREGPOINT_BOTTOMRIGHT, 
+		rpoint <= RECTREGPOINT_BOTTOMRIGHT, 
 		"invalid rpoint (%i)", 
-		self->rpoint
+		rpoint
+	);
+
+	self->width = width;
+	self->height = height;
+	rect_setpos(self, pos, rpoint);
+
+	return self;
+}
+
+struct Vector2d rect_getpos(struct Rect* self, enum RectRegPoint rpoint)
+{
+	log_assert(self, "is NULL");
+	log_assert(
+		rpoint <= RECTREGPOINT_BOTTOMRIGHT, 
+		"invalid rpoint (%i)", 
+		rpoint
 	);
 
 	struct Vector2d pos;
-	switch(self->rpoint)
+	switch(rpoint)
 	{
 	case RECTREGPOINT_CENTER:
-		pos.x = self->pos.x - self->width / 2.0;
-		pos.y = self->pos.y - self->height / 2.0;
+		pos.x = self->pos.x + self->width / 2.0;
+		pos.y = self->pos.y + self->height / 2.0;
 		break;
 	case RECTREGPOINT_CENTERTOP:
-		pos.x = self->pos.x - self->width / 2.0;
+		pos.x = self->pos.x + self->width / 2.0;
 		pos.y = self->pos.y;
 		break;
 	case RECTREGPOINT_CENTERLEFT:
 		pos.x = self->pos.x;
-		pos.y = self->pos.y - self->height / 2.0;
+		pos.y = self->pos.y + self->height / 2.0;
 		break;
 	case RECTREGPOINT_CENTERRIGHT:
-		pos.x = self->pos.x - self->width;
-		pos.y = self->pos.y - self->height / 2.0;
+		pos.x = self->pos.x + self->width;
+		pos.y = self->pos.y + self->height / 2.0;
 		break;
 	case RECTREGPOINT_CENTERBOTTOM:
-		pos.x = self->pos.x - self->width / 2.0;
-		pos.y = self->pos.y - self->height;
+		pos.x = self->pos.x + self->width / 2.0;
+		pos.y = self->pos.y + self->height;
 		break;
 	case RECTREGPOINT_TOPLEFT:
 		pos.x = self->pos.x;
 		pos.y = self->pos.y;
 		break;
 	case RECTREGPOINT_TOPRIGHT:
-		pos.x = self->pos.x - self->width;
+		pos.x = self->pos.x + self->width;
 		pos.y = self->pos.y;
 		break;
 	case RECTREGPOINT_BOTTOMLEFT:
 		pos.x = self->pos.x;
-		pos.y = self->pos.y - self->height;
+		pos.y = self->pos.y + self->height;
 		break;
 	case RECTREGPOINT_BOTTOMRIGHT:
-		pos.x = self->pos.x - self->width;
-		pos.y = self->pos.y - self->height;
+		pos.x = self->pos.x + self->width;
+		pos.y = self->pos.y + self->height;
 		break;
 	}
 
 	return pos;
 }
 
-void rect_setpos(struct Rect* self, struct Vector2d pos)
+void rect_setpos(
+	struct Rect* self, 
+	struct Vector2d pos, 
+	enum RectRegPoint rpoint
+)
 {
 	log_assert(self, "is NULL");
+	log_assert(
+		rpoint <= RECTREGPOINT_BOTTOMRIGHT, 
+		"invalid rpoint (%i)", 
+		rpoint
+	);
 
-	switch(self->rpoint)
+	switch(rpoint)
 	{
 	case RECTREGPOINT_CENTER:
-		self->pos.x = pos.x + self->width / 2.0;
-		self->pos.y = pos.y + self->height / 2.0;
+		self->pos.x = pos.x - self->width / 2.0;
+		self->pos.y = pos.y - self->height / 2.0;
 		break;
 	case RECTREGPOINT_CENTERTOP:
-		self->pos.x = pos.x + self->width / 2.0;
+		self->pos.x = pos.x - self->width / 2.0;
 		self->pos.y = pos.y;
 		break;
 	case RECTREGPOINT_CENTERLEFT:
 		self->pos.x = pos.x;
-		self->pos.y = pos.y + self->height / 2.0;
+		self->pos.y = pos.y - self->height / 2.0;
 		break;
 	case RECTREGPOINT_CENTERRIGHT:
-		self->pos.x = pos.x + self->width;
-		self->pos.y = pos.y + self->height / 2.0;
+		self->pos.x = pos.x - self->width;
+		self->pos.y = pos.y - self->height / 2.0;
 		break;
 	case RECTREGPOINT_CENTERBOTTOM:
-		self->pos.x = pos.x + self->width / 2.0;
-		self->pos.y = pos.y + self->height;
+		self->pos.x = pos.x - self->width / 2.0;
+		self->pos.y = pos.y - self->height;
 		break;
 	case RECTREGPOINT_TOPLEFT:
 		self->pos.x = pos.x;
 		self->pos.y = pos.y;
 		break;
 	case RECTREGPOINT_TOPRIGHT:
-		self->pos.x = pos.x + self->width;
+		self->pos.x = pos.x - self->width;
 		self->pos.y = pos.y;
 		break;
 	case RECTREGPOINT_BOTTOMLEFT:
 		self->pos.x = pos.x;
-		self->pos.y = pos.y + self->height;
+		self->pos.y = pos.y - self->height;
 		break;
 	case RECTREGPOINT_BOTTOMRIGHT:
-		self->pos.x = pos.x + self->width;
-		self->pos.y = pos.y + self->height;
+		self->pos.x = pos.x - self->width;
+		self->pos.y = pos.y - self->height;
 		break;
 	}
 }
@@ -129,8 +160,8 @@ int rect_intersects(struct Rect* self, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d pos1 = rect_getpos(self);
-	struct Vector2d pos2 = rect_getpos(other);
+	struct Vector2d pos1 = self->pos;
+	struct Vector2d pos2 = other->pos;
 
 	int intersectx = intersectsaxis(
 		pos1.x, 
@@ -163,7 +194,7 @@ int rect_intersectspoint(struct Rect* self, double x, double y)
 {
 	log_assert(self, "is NULL");
 
-	struct Vector2d pos = rect_getpos(self);
+	struct Vector2d pos = self->pos;
 
 	if((x >= pos.x) && (x <= (pos.x + self->width - 1)) && 
 		(y >= pos.y) && (y <= (pos.y + self->height - 1)))
@@ -179,8 +210,8 @@ int rect_hitleft(struct Rect* self, double dx, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d selfpos = rect_getpos(self);
-	struct Vector2d otherpos = rect_getpos(other);
+	struct Vector2d selfpos = self->pos;
+	struct Vector2d otherpos = other->pos;
 
 	if(selfpos.x - dx < otherpos.x + other->width)
 	{
@@ -212,8 +243,8 @@ int rect_hitright(struct Rect* self, double dx, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d selfpos = rect_getpos(self);
-	struct Vector2d otherpos = rect_getpos(other);
+	struct Vector2d selfpos = self->pos;
+	struct Vector2d otherpos = other->pos;
 
 	if(selfpos.x + self->width - dx > otherpos.x)
 	{
@@ -245,8 +276,8 @@ int rect_hittop(struct Rect* self, double dy, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d selfpos = rect_getpos(self);
-	struct Vector2d otherpos = rect_getpos(other);
+	struct Vector2d selfpos = self->pos;
+	struct Vector2d otherpos = other->pos;
 
 	if(selfpos.y - dy < otherpos.y + other->height)
 	{
@@ -279,8 +310,8 @@ int rect_hitbottom(struct Rect* self, double dy, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d selfpos = rect_getpos(self);
-	struct Vector2d otherpos = rect_getpos(other);
+	struct Vector2d selfpos = self->pos;
+	struct Vector2d otherpos = other->pos;
 
 	if(selfpos.y + self->height - dy > otherpos.y)
 	{
