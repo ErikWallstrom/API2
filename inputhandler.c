@@ -5,8 +5,8 @@ struct InputHandler* inputhandler_ctor(struct InputHandler* self)
 {
 	log_assert(self, "is NULL");
 
-	//TODO: Change 100 to a more appropriate value
-	self->events = vec_ctor(SDL_Event, 100); 
+	//TODO: Change 0 to a more appropriate value
+	self->events = vec_ctor(SDL_Event, 0); 
 	self->keystate = SDL_GetKeyboardState(NULL);
 	self->mousestate = SDL_GetMouseState(&self->mousex, &self->mousey);
 
@@ -27,4 +27,9 @@ void inputhandler_update(struct InputHandler* self)
 	self->mousestate = SDL_GetMouseState(&self->mousex, &self->mousey);
 }
 
+void inputhandler_dtor(struct InputHandler* self)
+{
+	log_assert(self, "is NULL");
+	vec_dtor(self->events);
+}
 
