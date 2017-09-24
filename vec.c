@@ -76,11 +76,12 @@ void vec_expand_(Vec(void) vec, size_t pos, size_t elements)
 			sizeof(struct Vec_) + self->buffersize +
 				sizeof(unsigned int)
 		);
-		*(void**)vec = self->buffer;
 		if(!self)
 		{
 			log_error("realloc failed, in <%s>", __func__);
 		}
+
+		*(void**)vec = self->buffer;
 	}
 
 	memmove(
