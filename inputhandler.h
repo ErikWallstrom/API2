@@ -14,5 +14,6 @@ struct InputHandler
 
 struct InputHandler* inputhandler_ctor(struct InputHandler* self);
 void inputhandler_update(struct InputHandler* self);
+void inputhandler_dtor(struct InputHandler* self);
 
 #endif
