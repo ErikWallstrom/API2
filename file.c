@@ -35,25 +35,25 @@ struct File* file_ctor(
 	self->raw = fopen(path, m);
 	if(!self->raw)
 	{
-		log_error(strerror(errno));
+		log_error("%s", strerror(errno));
 	}
 
 	if(mode & FILEMODE_READ)
 	{
 		if(fseek(self->raw, 0, SEEK_END))
 		{
-			log_error(strerror(errno));
+			log_error("%s", strerror(errno));
 		}
 
 		long filesize = ftell(self->raw);
 		if(filesize == EOF)
 		{
-			log_error(strerror(errno));
+			log_error("%s", strerror(errno));
 		}
 
 		if(fseek(self->raw, 0, SEEK_SET))
 		{
-			log_error(strerror(errno));
+			log_error("%s", strerror(errno));
 		}
 
 		self->content = vec_ctor(char, filesize + 1);
@@ -92,17 +92,17 @@ void file_flush(struct File* self)
 
 	if(fseek(self->raw, 0, SEEK_SET))
 	{
-		log_error(strerror(errno));
+		log_error("%s", strerror(errno));
 	}
 
 	if(fputs(self->content, self->raw) == EOF)
 	{
-		log_error(strerror(errno));
+		log_error("%s", strerror(errno));
 	}
 
 	if(fflush(self->raw) == EOF)
 	{
-		log_error(strerror(errno));
+		log_error("%s", strerror(errno));
 	}
 }
 

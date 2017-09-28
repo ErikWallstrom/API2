@@ -17,7 +17,7 @@ struct Font* font_ctor(
 	self->raw = TTF_OpenFont(path, size);
 	if(!self->raw)
 	{
-		log_error(TTF_GetError());
+		log_error("%s", TTF_GetError());
 	}
 
 	//XXX: Is + 1 really needed? Not sure, math...
@@ -32,14 +32,14 @@ struct Font* font_ctor(
 			SDL_Surface* surface = TTF_RenderGlyph_Blended(self->raw, i, color);
 			if(!surface)
 			{
-				log_error(TTF_GetError());
+				log_error("%s", TTF_GetError());
 			}
 
 			struct Texture texture;
 			texture.raw = SDL_CreateTextureFromSurface(renderer, surface);
 			if(!texture.raw)
 			{
-				log_error(SDL_GetError());
+				log_error("%s", SDL_GetError());
 			}
 
 			SDL_QueryTexture(
