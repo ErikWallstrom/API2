@@ -205,7 +205,7 @@ int rect_intersectspoint(struct Rect* self, double x, double y)
 	return 0;
 }
 
-int rect_hitleft(struct Rect* self, double dx, struct Rect* other)
+static int rect_hitleft(struct Rect* self, double dx, struct Rect* other)
 {
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
@@ -238,7 +238,7 @@ int rect_hitleft(struct Rect* self, double dx, struct Rect* other)
 	return 1;
 }
 
-int rect_hitright(struct Rect* self, double dx, struct Rect* other)
+static int rect_hitright(struct Rect* self, double dx, struct Rect* other)
 {
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
@@ -271,7 +271,7 @@ int rect_hitright(struct Rect* self, double dx, struct Rect* other)
 	return 1;
 }
 
-int rect_hittop(struct Rect* self, double dy, struct Rect* other)
+static int rect_hittop(struct Rect* self, double dy, struct Rect* other)
 {
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
@@ -305,7 +305,7 @@ int rect_hittop(struct Rect* self, double dy, struct Rect* other)
 
 }
 
-int rect_hitbottom(struct Rect* self, double dy, struct Rect* other)
+static int rect_hitbottom(struct Rect* self, double dy, struct Rect* other)
 {
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
@@ -336,5 +336,36 @@ int rect_hitbottom(struct Rect* self, double dy, struct Rect* other)
 	}
 
 	return 1;
+}
+
+enum RectCollisionSide rect_hitside(
+	struct Rect* self, 
+	struct Rect* other, 
+	struct Vector2d speed
+)
+{
+	log_assert(self, "is NULL");
+	log_assert(other, "is NULL");
+
+	if(rect_hitleft(self, speed.x - 1, other))
+	{
+		return RECTCOLLISIONSIDE_LEFT;
+	}
+	else if(rect_hitright(self, speed.x, other))
+	{
+		return RECTCOLLISIONSIDE_RIGHT;
+	}
+	else if(rect_hittop(self, speed.y, other))
+	{
+		return RECTCOLLISIONSIDE_TOP;
+	}
+	else if(rect_hitbottom(self, speed.y, other))
+	{
+		return RECTCOLLISIONSIDE_BOTTOM;
+	}
+	else
+	{
+		return RECTCOLLISIONSIDE_NONE;
+	}
 }
 

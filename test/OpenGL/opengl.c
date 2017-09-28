@@ -1,10 +1,12 @@
-#include "../inputhandler.h"
-#include "../shaderprog.h"
-#include "../window.h"
-#include "../log.h"
+#include "../../inputhandler.h"
+#include "../../shaderprog.h"
+#include "../../window.h"
+#include "../../log.h"
 #include <GL/glew.h>
 
 #define defer(func) __attribute__((cleanup(func)))
+
+//https://learnopengl.com/#!Getting-started/Textures
 
 struct Game
 {
@@ -12,7 +14,6 @@ struct Game
 	struct Window* window;
 	ShaderProg* program;
 	GLuint* vao;
-	GLuint* ebo;
 	int* done;
 	double delta;
 };
@@ -91,10 +92,11 @@ int main(void)
 	shaderprog_ctor(&program, "vertex.glsl", "fragment.glsl");
 
 	float vertices[] = {
-		-0.5f,  0.5f, 
-		 0.5f, -0.5f, 
-		-0.5f, -0.5f, 
-		 0.5f,  0.5f, 
+		//Position		//Color
+		-0.5f,  0.5f, 	1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f,  	0.0f, 1.0f, 0.0f,
+		-0.5f, -0.5f,  	0.0f, 0.0f, 1.0f,
+		 0.5f,  0.5f,  	1.0f, 1.0f, 1.0f,
 	};
 
 	GLuint indices[] = {
@@ -121,9 +123,18 @@ int main(void)
 		GL_STATIC_DRAW
 	);
 
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), NULL);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), NULL);
 	glEnableVertexAttribArray(0);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glVertexAttribPointer(
+		1, 
+		3, 
+		GL_FLOAT, 
+		GL_FALSE, 
+		5 * sizeof(float), 
+		(void*)(2 * sizeof(float))
+	);
+	glEnableVertexAttribArray(1);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	double tickrate = 1000.0 / 30.0;
 	Uint64 oldtime = SDL_GetPerformanceCounter();
@@ -135,7 +146,6 @@ int main(void)
 	game.input = &input;
 	game.done = &done;
 	game.vao = vao;
-	game.ebo = ebo;
 
 	while(!done)
 	{

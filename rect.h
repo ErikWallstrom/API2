@@ -17,6 +17,15 @@ enum RectRegPoint
 	RECTREGPOINT_BOTTOMRIGHT
 };
 
+enum RectCollisionSide
+{
+	RECTCOLLISIONSIDE_NONE,
+	RECTCOLLISIONSIDE_TOP,
+	RECTCOLLISIONSIDE_BOTTOM,
+	RECTCOLLISIONSIDE_LEFT,
+	RECTCOLLISIONSIDE_RIGHT,
+};
+
 //Should it really be called Rect?
 struct Rect
 {
@@ -41,10 +50,10 @@ void rect_setpos(
 
 int rect_intersects(struct Rect* self, struct Rect* other);
 int rect_intersectspoint(struct Rect* self, double x, double y);
-
-int rect_hitleft(struct Rect* self, double dx, struct Rect* other);
-int rect_hitright(struct Rect* self, double dx, struct Rect* other);
-int rect_hittop(struct Rect* self, double dy, struct Rect* other);
-int rect_hitbottom(struct Rect* self, double dy, struct Rect* other);
+enum RectCollisionSide rect_hitside(
+	struct Rect* self, 
+	struct Rect* other, 
+	struct Vector2d speed
+);
 
 #endif
