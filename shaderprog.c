@@ -129,6 +129,24 @@ void shaderprog_setfloat(ShaderProg* self, const char* name, float value)
 	glUniform1f(location, value);
 }
 
+void shaderprog_setmat4f(
+	ShaderProg* self, 
+	const char* name, 
+	struct Mat4f* mat
+)
+{
+	log_assert(self, "is NULL");
+	log_assert(name, "is NULL");
+
+	GLint location = glGetUniformLocation(*self, name);
+	if(location == -1)
+	{
+		log_error("Unable to set uniform (%s)", name);
+	}
+
+	glUniformMatrix4fv(location, 1, GL_FALSE, (float*)mat->scalars);
+}
+
 void shaderprog_dtor(ShaderProg* self)
 {
 	log_assert(self, "is NULL");

@@ -3,7 +3,7 @@
 
 struct Rect* rect_ctor(
 	struct Rect* self, 
-	struct Vector2d pos, 
+	struct Vec2d pos, 
 	enum RectRegPoint rpoint, 
 	double width, 
 	double height
@@ -23,7 +23,7 @@ struct Rect* rect_ctor(
 	return self;
 }
 
-struct Vector2d rect_getpos(struct Rect* self, enum RectRegPoint rpoint)
+struct Vec2d rect_getpos(struct Rect* self, enum RectRegPoint rpoint)
 {
 	log_assert(self, "is NULL");
 	log_assert(
@@ -32,7 +32,7 @@ struct Vector2d rect_getpos(struct Rect* self, enum RectRegPoint rpoint)
 		rpoint
 	);
 
-	struct Vector2d pos;
+	struct Vec2d pos;
 	switch(rpoint)
 	{
 	case RECTREGPOINT_CENTER:
@@ -78,7 +78,7 @@ struct Vector2d rect_getpos(struct Rect* self, enum RectRegPoint rpoint)
 
 void rect_setpos(
 	struct Rect* self, 
-	struct Vector2d pos, 
+	struct Vec2d pos, 
 	enum RectRegPoint rpoint
 )
 {
@@ -160,8 +160,8 @@ int rect_intersects(struct Rect* self, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d pos1 = self->pos;
-	struct Vector2d pos2 = other->pos;
+	struct Vec2d pos1 = self->pos;
+	struct Vec2d pos2 = other->pos;
 
 	int intersectx = intersectsaxis(
 		pos1.x, 
@@ -194,7 +194,7 @@ int rect_intersectspoint(struct Rect* self, double x, double y)
 {
 	log_assert(self, "is NULL");
 
-	struct Vector2d pos = self->pos;
+	struct Vec2d pos = self->pos;
 
 	if((x >= pos.x) && (x <= (pos.x + self->width - 1)) && 
 		(y >= pos.y) && (y <= (pos.y + self->height - 1)))
@@ -210,8 +210,8 @@ static int rect_hitleft(struct Rect* self, double dx, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d selfpos = self->pos;
-	struct Vector2d otherpos = other->pos;
+	struct Vec2d selfpos = self->pos;
+	struct Vec2d otherpos = other->pos;
 
 	if(selfpos.x - dx < otherpos.x + other->width)
 	{
@@ -243,8 +243,8 @@ static int rect_hitright(struct Rect* self, double dx, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d selfpos = self->pos;
-	struct Vector2d otherpos = other->pos;
+	struct Vec2d selfpos = self->pos;
+	struct Vec2d otherpos = other->pos;
 
 	if(selfpos.x + self->width - dx > otherpos.x)
 	{
@@ -276,8 +276,8 @@ static int rect_hittop(struct Rect* self, double dy, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d selfpos = self->pos;
-	struct Vector2d otherpos = other->pos;
+	struct Vec2d selfpos = self->pos;
+	struct Vec2d otherpos = other->pos;
 
 	if(selfpos.y - dy < otherpos.y + other->height)
 	{
@@ -310,8 +310,8 @@ static int rect_hitbottom(struct Rect* self, double dy, struct Rect* other)
 	log_assert(self, "is NULL");
 	log_assert(other, "is NULL");
 
-	struct Vector2d selfpos = self->pos;
-	struct Vector2d otherpos = other->pos;
+	struct Vec2d selfpos = self->pos;
+	struct Vec2d otherpos = other->pos;
 
 	if(selfpos.y + self->height - dy > otherpos.y)
 	{
@@ -341,7 +341,7 @@ static int rect_hitbottom(struct Rect* self, double dy, struct Rect* other)
 enum RectCollisionSide rect_hitside(
 	struct Rect* self, 
 	struct Rect* other, 
-	struct Vector2d speed
+	struct Vec2d speed
 )
 {
 	log_assert(self, "is NULL");

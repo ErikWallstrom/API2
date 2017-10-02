@@ -1,7 +1,7 @@
 #ifndef RECT_H
 #define RECT_H
 
-#include "vector2d.h"
+#include "vec2d.h"
 
 enum RectRegPoint
 {
@@ -29,22 +29,22 @@ enum RectCollisionSide
 //Should it really be called Rect?
 struct Rect
 {
-	struct Vector2d pos;
+	struct Vec2d pos;
 	double width, height;
 };
 
 struct Rect* rect_ctor(
 	struct Rect* self, 
-	struct Vector2d pos, 
+	struct Vec2d pos, 
 	enum RectRegPoint rpoint, 
 	double width, 
 	double height
 );
 
-struct Vector2d rect_getpos(struct Rect* self, enum RectRegPoint rpoint);
+struct Vec2d rect_getpos(struct Rect* self, enum RectRegPoint rpoint);
 void rect_setpos(
 	struct Rect* self, 
-	struct Vector2d pos, 
+	struct Vec2d pos, 
 	enum RectRegPoint rpoint
 );
 
@@ -53,7 +53,7 @@ int rect_intersectspoint(struct Rect* self, double x, double y);
 enum RectCollisionSide rect_hitside(
 	struct Rect* self, 
 	struct Rect* other, 
-	struct Vector2d speed
+	struct Vec2d speed
 );
 
 #endif

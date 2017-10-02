@@ -2,11 +2,16 @@
 #include "../../shaderprog.h"
 #include "../../gltexture.h"
 #include "../../glwindow.h"
+#include "../../mat4f.h"
+#include "../../vec3f.h"
 #include "../../log.h"
 
 #include <GL/glew.h>
 
 #define defer(func) __attribute__((cleanup(func)))
+#define PI 3.1415926535897f
+#define DEGREES(x) x * (180.0f / PI)
+#define RADIANS(x) x * (PI / 180.0f)
 
 struct Game
 {
@@ -66,10 +71,20 @@ static void render(double tickrate, double adt)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, *game.texture2);
 
+	struct Mat4f transform = MAT4F_IDENTITYMATRIX;
+	mat4f_rotate(
+		&transform, 
+		sinf(SDL_GetTicks() / 1000.0f) * 2.0f * PI, 
+		&(struct Vec3f){1.0f, 1.0f, 1.0f},
+		&transform
+	);
+	mat4f_scale(&transform, &(struct Vec3f){0.3f, 0.3f, 0.3f}, &transform);
+
 	glUseProgram(*game.program);
+	shaderprog_setmat4f(game.program, "transform", &transform);
+
 	glBindVertexArray(*game.vao);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 	glwindow_render(game.window);
 }
 
@@ -105,11 +120,11 @@ int main(void)
 	gltexture_ctor(&texture2, "../2D_Game/res/tree.png");
 
 	float vertices[] = {
-		//Position		//Color				//Texture
-		-0.5f,  0.5f, 	1.0f, 1.0f, 1.0f,	0.0f, 0.0f, //Top left
-		 0.5f,  0.5f,  	1.0f, 1.0f, 1.0f,	1.0f, 0.0f, //Top right
-		-0.5f, -0.5f,  	1.0f, 1.0f, 1.0f,	0.0f, 1.0f, //Bottom left
-		 0.5f, -0.5f,  	1.0f, 1.0f, 1.0f,	1.0f, 1.0f, //Bottom right
+		//Position				//Texture
+		-0.5f,  0.5f, 0.0f, 	0.0f, 0.0f, //Top left
+		 0.5f,  0.5f, 0.0f, 	1.0f, 0.0f, //Top right
+		-0.5f, -0.5f, 0.0f, 	0.0f, 1.0f, //Bottom left
+		 0.5f, -0.5f, 0.0f, 	1.0f, 1.0f, //Bottom right
 	};
 
 	GLuint indices[] = {
@@ -136,26 +151,17 @@ int main(void)
 		GL_STATIC_DRAW
 	);
 
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), NULL);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), NULL);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(
 		1, 
-		3, 
+		2, 
 		GL_FLOAT, 
 		GL_FALSE, 
-		7 * sizeof(float), 
-		(void*)(2 * sizeof(float))
+		5 * sizeof(float), 
+		(void*)(3 * sizeof(float))
 	);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(
-		2, 
-		2, 
-		GL_FLOAT, 
-		GL_FALSE, 
-		7 * sizeof(float), 
-		(void*)(5 * sizeof(float))
-	);
-	glEnableVertexAttribArray(2);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glUseProgram(program);

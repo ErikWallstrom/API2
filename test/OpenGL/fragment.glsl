@@ -2,7 +2,6 @@
 
 out vec4 color;
 
-in vec3 fcolor;
 in vec2 ftexcoord;
 
 uniform sampler2D tex1;
