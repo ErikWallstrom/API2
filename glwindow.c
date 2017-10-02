@@ -1,18 +1,19 @@
-#include "window.h"
+#include "glwindow.h"
 #include "log.h"
 
-struct Window* window_ctor(
-	struct Window* self, 
+struct GLWindow* glwindow_ctor(
+	struct GLWindow* self, 
 	const char* title, 
 	int width, 
 	int height,
-	enum WindowFlags flags
+	enum GLWindowFlags flags
 )
 {
 	log_assert(self, "is NULL");
 	log_assert(title, "is NULL");
 	log_assert(width > 0, "invalid width");
 	log_assert(height > 0, "invalid height");
+	log_assert(flags <= GLWINDOW_MAXIMIZED, "invalid flag: %i", flags);
 
 	self->raw = SDL_CreateWindow(
 		title,
@@ -20,26 +21,28 @@ struct Window* window_ctor(
 		SDL_WINDOWPOS_UNDEFINED,
 		width,
 		height,
-		(flags & WINDOW_MAXIMIZED) ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_SHOWN
+		((flags & GLWINDOW_MAXIMIZED) 
+		 	? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_SHOWN) | SDL_WINDOW_OPENGL
 	);
 	if(!self->raw)
 	{
 		log_error("%s", SDL_GetError());
 	}
-	
-	int renderflags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE;
-	if(flags & WINDOW_VSYNC)
-	{
-		renderflags |= SDL_RENDERER_PRESENTVSYNC;
-	}
 
-	self->renderer = SDL_CreateRenderer(self->raw, -1, renderflags);
-	if(!self->renderer)
+	self->context = SDL_GL_CreateContext(self->raw);
+	if(!self->context)
 	{
 		log_error("%s", SDL_GetError());
 	}
 
-	SDL_RenderSetLogicalSize(self->renderer, width, height);
+	if(flags & GLWINDOW_VSYNC)
+	{
+		SDL_GL_SetSwapInterval(1); //Should this be -1?
+	}
+	else
+	{
+		SDL_GL_SetSwapInterval(0);
+	}
 
 	self->title = SDL_GetWindowTitle(self->raw);
 	self->flags = flags;
@@ -52,11 +55,10 @@ struct Window* window_ctor(
 	return self;
 }
 
-void window_render(struct Window* self)
+void glwindow_render(struct GLWindow* self)
 {
 	log_assert(self, "is NULL");
-	SDL_RenderPresent(self->renderer);
-	SDL_RenderClear(self->renderer);
+	SDL_GL_SwapWindow(self->raw);
 
 	self->frames++;
 	if(SDL_GetTicks() / 1000 > self->seconds)
@@ -67,11 +69,11 @@ void window_render(struct Window* self)
 	}
 }
 
-void window_dtor(struct Window* self)
+void glwindow_dtor(struct GLWindow* self)
 {
 	log_assert(self, "is NULL");
 
-	SDL_DestroyRenderer(self->renderer);
+	SDL_GL_DeleteContext(self->context);
 	SDL_DestroyWindow(self->raw);
 }
 

@@ -101,6 +101,34 @@ ShaderProg* shaderprog_ctor(
 	return self;
 }
 
+void shaderprog_setint(ShaderProg* self, const char* name, int value)
+{
+	log_assert(self, "is NULL");
+	log_assert(name, "is NULL");
+
+	GLint location = glGetUniformLocation(*self, name);
+	if(location == -1)
+	{
+		log_error("Unable to set uniform (%s)", name);
+	}
+
+	glUniform1i(location, value);
+}
+
+void shaderprog_setfloat(ShaderProg* self, const char* name, float value)
+{
+	log_assert(self, "is NULL");
+	log_assert(name, "is NULL");
+
+	GLint location = glGetUniformLocation(*self, name);
+	if(location == -1)
+	{
+		log_error("Unable to set uniform (%s)", name);
+	}
+
+	glUniform1f(location, value);
+}
+
 void shaderprog_dtor(ShaderProg* self)
 {
 	log_assert(self, "is NULL");

@@ -5,18 +5,15 @@
 
 enum WindowFlags
 {
-	WINDOW_DEFAULT	= 1 << 0,
-	WINDOW_VSYNC 	= 1 << 1,
-	WINDOW_OPENGL 	= 1 << 2,
+	WINDOW_DEFAULT	 = 0,
+	WINDOW_VSYNC 	 = 1 << 0,
+	WINDOW_MAXIMIZED = 1 << 1,
 };
 
 struct Window
 {
 	SDL_Window* raw;
-	union {
-		SDL_Renderer* renderer;
-		SDL_GLContext* context;
-	};
+	SDL_Renderer* renderer;
 
 	const char* title;
 	int width, height;

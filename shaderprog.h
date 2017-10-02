@@ -1,11 +1,6 @@
 #ifndef SHADERPROG_H
 #define SHADERPROG_H
 
-#define shaderprog_setint(self, name, value) \
-	glUniform1i(glGetUniformLocation(*self, name), value)
-#define shaderprog_setfloat(self, name, value) \
-	glUniform1f(glGetUniformLocation(*self, name), value)
-
 typedef unsigned int ShaderProg;
 
 ShaderProg* shaderprog_ctor(
@@ -13,6 +8,8 @@ ShaderProg* shaderprog_ctor(
 	const char* vshaderpath,
 	const char* fshaderpath
 );
+void shaderprog_setint(ShaderProg* self, const char* name, int value);
+void shaderprog_setfloat(ShaderProg* self, const char* name, float value);
 void shaderprog_dtor(ShaderProg* self);
 
 #endif

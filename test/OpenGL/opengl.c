@@ -1,18 +1,20 @@
 #include "../../inputhandler.h"
 #include "../../shaderprog.h"
-#include "../../window.h"
+#include "../../gltexture.h"
+#include "../../glwindow.h"
 #include "../../log.h"
+
 #include <GL/glew.h>
 
 #define defer(func) __attribute__((cleanup(func)))
 
-//https://learnopengl.com/#!Getting-started/Textures
-
 struct Game
 {
 	struct InputHandler* input;
-	struct Window* window;
+	struct GLWindow* window;
 	ShaderProg* program;
+	GLTexture* texture1;
+	GLTexture* texture2;
 	GLuint* vao;
 	int* done;
 	double delta;
@@ -59,11 +61,16 @@ static void render(double tickrate, double adt)
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, *game.texture1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, *game.texture2);
+
 	glUseProgram(*game.program);
 	glBindVertexArray(*game.vao);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-	window_render(game.window);
+	glwindow_render(game.window);
 }
 
 int main(void)
@@ -75,8 +82,8 @@ int main(void)
 		SDL_GL_CONTEXT_PROFILE_CORE
 	);
 
-	defer(window_dtor) struct Window window;
-	window_ctor(&window, "Game Window", 800, 600, WINDOW_VSYNC | WINDOW_OPENGL);
+	defer(glwindow_dtor) struct GLWindow window;
+	glwindow_ctor(&window, "Game Window", 800, 600, GLWINDOW_VSYNC);
 
 	defer(inputhandler_dtor) struct InputHandler input;
 	inputhandler_ctor(&input);
@@ -91,17 +98,23 @@ int main(void)
 	defer(shaderprog_dtor) ShaderProg program;
 	shaderprog_ctor(&program, "vertex.glsl", "fragment.glsl");
 
+	defer(gltexture_dtor) GLTexture texture1;
+	gltexture_ctor(&texture1, "../2D_Game/res/player.png");
+
+	defer(gltexture_dtor) GLTexture texture2;
+	gltexture_ctor(&texture2, "../2D_Game/res/tree.png");
+
 	float vertices[] = {
-		//Position		//Color
-		-0.5f,  0.5f, 	1.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f,  	0.0f, 1.0f, 0.0f,
-		-0.5f, -0.5f,  	0.0f, 0.0f, 1.0f,
-		 0.5f,  0.5f,  	1.0f, 1.0f, 1.0f,
+		//Position		//Color				//Texture
+		-0.5f,  0.5f, 	1.0f, 1.0f, 1.0f,	0.0f, 0.0f, //Top left
+		 0.5f,  0.5f,  	1.0f, 1.0f, 1.0f,	1.0f, 0.0f, //Top right
+		-0.5f, -0.5f,  	1.0f, 1.0f, 1.0f,	0.0f, 1.0f, //Bottom left
+		 0.5f, -0.5f,  	1.0f, 1.0f, 1.0f,	1.0f, 1.0f, //Bottom right
 	};
 
 	GLuint indices[] = {
-		0, 2, 1,
-		0, 3, 1,
+		0, 1, 2,
+		1, 3, 2,
 	};
 
 	GLuint vao[1];
@@ -123,24 +136,39 @@ int main(void)
 		GL_STATIC_DRAW
 	);
 
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), NULL);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), NULL);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(
 		1, 
 		3, 
 		GL_FLOAT, 
 		GL_FALSE, 
-		5 * sizeof(float), 
+		7 * sizeof(float), 
 		(void*)(2 * sizeof(float))
 	);
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(
+		2, 
+		2, 
+		GL_FLOAT, 
+		GL_FALSE, 
+		7 * sizeof(float), 
+		(void*)(5 * sizeof(float))
+	);
+	glEnableVertexAttribArray(2);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	glUseProgram(program);
+	shaderprog_setint(&program, "tex1", 0);
+	shaderprog_setint(&program, "tex2", 1);
 
 	double tickrate = 1000.0 / 30.0;
 	Uint64 oldtime = SDL_GetPerformanceCounter();
 	double adt = 0.0; //accumulated delta time
 	int done = 0;
 
+	game.texture1 = &texture1;
+	game.texture2 = &texture2;
 	game.program = &program;
 	game.window = &window;
 	game.input = &input;

@@ -180,7 +180,7 @@ int main(void)
 	window.height = 900;
 	*/
 
-	struct InputHandler input;
+	defer(inputhandler_dtor) struct InputHandler input;
 	inputhandler_ctor(&input);
 
 	defer(texture_dtor) struct Texture playertexture;

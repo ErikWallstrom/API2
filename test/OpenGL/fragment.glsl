@@ -1,10 +1,15 @@
 #version 330 core
 
-in vec3 outcolor;
 out vec4 color;
+
+in vec3 fcolor;
+in vec2 ftexcoord;
+
+uniform sampler2D tex1;
+uniform sampler2D tex2;
 
 void main()
 {
-	color = vec4(outcolor, 1.0);
+	color = mix(texture(tex1, ftexcoord), texture(tex2, ftexcoord), 0.2);
 }
 

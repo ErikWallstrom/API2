@@ -1,13 +1,16 @@
 #version 330 core
 
-layout(location = 0) in vec2 position;
-layout(location = 1) in vec3 color;
+layout(location = 0) in vec2 vposition;
+layout(location = 1) in vec3 vcolor;
+layout(location = 2) in vec2 vtexcoord;
 
-out vec3 outcolor;
+out vec3 fcolor;
+out vec2 ftexcoord;
 
 void main()
 {
-	gl_Position = vec4(position.x, position.y, 0.0, 1.0);
-	outcolor = color;
+	gl_Position = vec4(vposition.x, vposition.y, 0.0, 1.0);
+	fcolor = vcolor;
+	ftexcoord = vtexcoord;
 }
 
