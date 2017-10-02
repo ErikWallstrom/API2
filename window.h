@@ -7,7 +7,7 @@ enum WindowFlags
 {
 	WINDOW_DEFAULT	 = 0,
 	WINDOW_VSYNC 	 = 1 << 0,
-	WINDOW_MAXIMIZED = 1 << 1,
+	WINDOW_FULLSCREEN = 1 << 1,
 };
 
 struct Window

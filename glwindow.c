@@ -13,7 +13,7 @@ struct GLWindow* glwindow_ctor(
 	log_assert(title, "is NULL");
 	log_assert(width > 0, "invalid width");
 	log_assert(height > 0, "invalid height");
-	log_assert(flags <= GLWINDOW_MAXIMIZED, "invalid flag: %i", flags);
+	log_assert(flags <= GLWINDOW_FULLSCREEN, "invalid flag: %i", flags);
 
 	self->raw = SDL_CreateWindow(
 		title,
@@ -21,8 +21,9 @@ struct GLWindow* glwindow_ctor(
 		SDL_WINDOWPOS_UNDEFINED,
 		width,
 		height,
-		((flags & GLWINDOW_MAXIMIZED) 
-		 	? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_SHOWN) | SDL_WINDOW_OPENGL
+		((flags & GLWINDOW_FULLSCREEN) 
+		 	? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_SHOWN) 
+			| SDL_WINDOW_OPENGL
 	);
 	if(!self->raw)
 	{

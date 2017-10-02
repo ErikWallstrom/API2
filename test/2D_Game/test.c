@@ -172,13 +172,13 @@ static void render(double tickrate, double adt)
 int main(void)
 {
 	defer(window_dtor) struct Window window;
-	window_ctor(&window, "Game Window", 16 * 4 * 20, 16 * 4 * 12, WINDOW_VSYNC);
-
-	/*
-	SDL_SetWindowFullscreen(window.raw, SDL_WINDOW_FULLSCREEN_DESKTOP);
-	window.width = 1600;
-	window.height = 900;
-	*/
+	window_ctor(
+		&window, 
+		"Game Window", 
+		1200, 
+		675, 
+		WINDOW_VSYNC //| WINDOW_FULLSCREEN
+	);
 
 	defer(inputhandler_dtor) struct InputHandler input;
 	inputhandler_ctor(&input);
@@ -227,6 +227,7 @@ int main(void)
 	{
 		double delta = (double)((SDL_GetPerformanceCounter() - oldtime) * 1000)
 			/ SDL_GetPerformanceFrequency();
+
 		adt += delta;
 		oldtime = SDL_GetPerformanceCounter();
 

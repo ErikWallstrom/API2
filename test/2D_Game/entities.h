@@ -21,8 +21,8 @@ struct RectComponent
 
 struct MoveComponent
 {
-	struct Vector2d velocity;
-	struct Vector2d oldpos;
+	struct Vec2d velocity;
+	struct Vec2d oldpos;
 };
 
 struct AnimationComponent

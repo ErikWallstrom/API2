@@ -20,7 +20,8 @@ struct Window* window_ctor(
 		SDL_WINDOWPOS_UNDEFINED,
 		width,
 		height,
-		(flags & WINDOW_MAXIMIZED) ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_SHOWN
+		(flags & WINDOW_FULLSCREEN) ? 
+			SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_SHOWN
 	);
 	if(!self->raw)
 	{

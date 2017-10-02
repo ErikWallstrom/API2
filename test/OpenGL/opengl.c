@@ -22,12 +22,12 @@ struct Game
 	GLTexture* texture2;
 	GLuint* vao;
 	int* done;
-	double delta;
+	float delta;
 };
 
 static struct Game game;
 
-static void handleinputs(double tickrate)
+static void handleinputs(float tickrate)
 {
 	inputhandler_update(game.input);
 	for(size_t i = 0; i < vec_getsize(game.input->events); i++)
@@ -56,12 +56,12 @@ static void handleinputs(double tickrate)
 	}
 }
 
-static void update(double tickrate)
+static void update(float tickrate)
 {
 	handleinputs(tickrate);
 }
 
-static void render(double tickrate, double adt)
+static void render(float tickrate, float adt)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -168,9 +168,9 @@ int main(void)
 	shaderprog_setint(&program, "tex1", 0);
 	shaderprog_setint(&program, "tex2", 1);
 
-	double tickrate = 1000.0 / 30.0;
 	Uint64 oldtime = SDL_GetPerformanceCounter();
-	double adt = 0.0; //accumulated delta time
+	float tickrate = 1000.0f / 30.0f;
+	float adt = 0.0f; //accumulated delta time
 	int done = 0;
 
 	game.texture1 = &texture1;
@@ -183,7 +183,7 @@ int main(void)
 
 	while(!done)
 	{
-		game.delta = (double)((SDL_GetPerformanceCounter() - oldtime) * 1000)
+		game.delta = (float)((SDL_GetPerformanceCounter() - oldtime) * 1000)
 			/ SDL_GetPerformanceFrequency();
 		adt += game.delta;
 		oldtime = SDL_GetPerformanceCounter();
