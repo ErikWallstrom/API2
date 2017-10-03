@@ -56,7 +56,6 @@ void mat4f_scale(struct Mat4f* self, struct Vec3f* vec, struct Mat4f* dest)
 	dest->scalars[0][0] = self->scalars[0][0] * vec->x;
 	dest->scalars[1][1] = self->scalars[1][1] * vec->y;
 	dest->scalars[2][2] = self->scalars[2][2] * vec->z;
-	//let w be unchanged
 }
 
 void mat4f_translate(struct Mat4f* self, struct Vec3f* vec, struct Mat4f* dest)
@@ -72,13 +71,11 @@ void mat4f_translate(struct Mat4f* self, struct Vec3f* vec, struct Mat4f* dest)
 }
 
 void mat4f_rotate(
-	struct Mat4f* self, 
 	float angle, 
 	struct Vec3f* vec, 
 	struct Mat4f* dest
 )
 {
-	log_assert(self, "is NULL");
 	log_assert(vec, "is NULL");
 	log_assert(dest, "is NULL");
 
@@ -96,5 +93,71 @@ void mat4f_rotate(
 	dest->scalars[0][2] = vec->z * vec->x * (1 - cval) - vec->y * sval;
 	dest->scalars[1][2] = vec->z * vec->y * (1 - cval) + vec->x * sval;
 	dest->scalars[2][2] = cval + vec->z * vec->z * (1 - cval);
+}
+
+void mat4f_perspective(
+	float fov, 
+	float aspect, 
+	float near, 
+	float far, 
+	struct Mat4f* dest
+)
+{
+	log_assert(dest, "is NULL");
+	
+	float a = 1.0f / tanf(fov / 2.0f);
+
+	dest->scalars[0][0] = a / aspect;
+	dest->scalars[0][1] = 0.0f;
+	dest->scalars[0][2] = 0.0f;
+	dest->scalars[0][3] = 0.0f;
+
+	dest->scalars[1][0] = 0.0f;
+	dest->scalars[1][1] = a;
+	dest->scalars[1][2] = 0.0f;
+	dest->scalars[1][3] = 0.0f;
+
+	dest->scalars[2][0] = 0.0f;
+	dest->scalars[2][1] = 0.0f;
+	dest->scalars[2][2] = -((far + near) / (far - near));
+	dest->scalars[2][3] = -1.0f;
+
+	dest->scalars[3][0] = 0.0f;
+	dest->scalars[3][1] = 0.0f;
+	dest->scalars[3][2] = -((2.0f * far * near) / (far - near));
+	dest->scalars[3][3] = 0.0f;
+}
+
+void mat4f_ortho(
+	float left, 
+	float right, 
+	float bottom, 
+	float top, 
+	float near, 
+	float far,
+	struct Mat4f* dest
+)
+{
+	log_assert(dest, "is NULL");
+
+	dest->scalars[0][0] = 2.0f / (right - left);
+	dest->scalars[0][1] = 0.0f;
+	dest->scalars[0][2] = 0.0f;
+	dest->scalars[0][3] = 0.0f;
+
+	dest->scalars[1][1] = 2.0f / (top - bottom);
+	dest->scalars[1][0] = 0.0f;
+	dest->scalars[1][2] = 0.0f;
+	dest->scalars[1][3] = 0.0f;
+
+	dest->scalars[2][2] = -2.0f / (far - near);
+	dest->scalars[2][0] = 0.0f;
+	dest->scalars[2][1] = 0.0f;
+	dest->scalars[2][3] = 0.0f;
+
+	dest->scalars[3][0] = -(right + left) / (right - left);
+	dest->scalars[3][1] = -(top + bottom) / (top - bottom);
+	dest->scalars[3][2] = -(far + near) / (far - near);
+	dest->scalars[3][3] = 1.0f;
 }
 

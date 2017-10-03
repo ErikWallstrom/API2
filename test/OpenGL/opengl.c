@@ -17,6 +17,7 @@ struct Game
 {
 	struct InputHandler* input;
 	struct GLWindow* window;
+	struct Vec3f* positions;
 	ShaderProg* program;
 	GLTexture* texture1;
 	GLTexture* texture2;
@@ -64,27 +65,41 @@ static void update(float tickrate)
 static void render(float tickrate, float adt)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, *game.texture1);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, *game.texture2);
 
-	struct Mat4f transform = MAT4F_IDENTITYMATRIX;
-	mat4f_rotate(
-		&transform, 
-		sinf(SDL_GetTicks() / 1000.0f) * 2.0f * PI, 
-		&(struct Vec3f){1.0f, 1.0f, 1.0f},
-		&transform
+	struct Mat4f view = MAT4F_IDENTITYMATRIX;
+	mat4f_translate(&view, &(struct Vec3f){0.0f, 0.0f, -5.0f}, &view);
+
+	struct Mat4f projection = MAT4F_IDENTITYMATRIX;
+	mat4f_perspective(
+		RADIANS(70.0f), 
+		(float)game.window->width / game.window->height,
+		0.1f,
+		100.0f,
+		&projection
 	);
-	mat4f_scale(&transform, &(struct Vec3f){0.3f, 0.3f, 0.3f}, &transform);
 
 	glUseProgram(*game.program);
-	shaderprog_setmat4f(game.program, "transform", &transform);
+	shaderprog_setmat4f(game.program, "view", &view);
+	shaderprog_setmat4f(game.program, "projection", &projection);
 
 	glBindVertexArray(*game.vao);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	for(size_t i = 0; i < 10; i++)
+	{
+		struct Mat4f model = MAT4F_IDENTITYMATRIX;
+		mat4f_translate(&model, &game.positions[i], &model);
+		mat4f_rotate(RADIANS(50.0f) * SDL_GetTicks() / 500.0f, &(struct Vec3f){1.0f, 0.3f, 0.5f}, &model);
+		shaderprog_setmat4f(game.program, "model", &model);
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glwindow_render(game.window);
 }
 
@@ -98,7 +113,13 @@ int main(void)
 	);
 
 	defer(glwindow_dtor) struct GLWindow window;
-	glwindow_ctor(&window, "Game Window", 800, 600, GLWINDOW_VSYNC);
+	glwindow_ctor(
+		&window, 
+		"Game Window", 
+		1200, 
+		675, 
+		GLWINDOW_VSYNC | GLWINDOW_FULLSCREEN
+	);
 
 	defer(inputhandler_dtor) struct InputHandler input;
 	inputhandler_ctor(&input);
@@ -119,12 +140,71 @@ int main(void)
 	defer(gltexture_dtor) GLTexture texture2;
 	gltexture_ctor(&texture2, "../2D_Game/res/tree.png");
 
+	/*
 	float vertices[] = {
 		//Position				//Texture
 		-0.5f,  0.5f, 0.0f, 	0.0f, 0.0f, //Top left
 		 0.5f,  0.5f, 0.0f, 	1.0f, 0.0f, //Top right
 		-0.5f, -0.5f, 0.0f, 	0.0f, 1.0f, //Bottom left
 		 0.5f, -0.5f, 0.0f, 	1.0f, 1.0f, //Bottom right
+	};
+	*/
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	struct Vec3f cubePositions[] = {
+		{0.0f,  0.0f,  0.0f}, 
+		{2.0f,  5.0f, -15.0f}, 
+		{-1.5f, -2.2f, -2.5f},  
+		{-3.8f, -2.0f, -12.3f},  
+		{2.4f, -0.4f, -3.5f},  
+		{-1.7f,  3.0f, -7.5f},  
+		{1.3f, -2.0f, -2.5f},  
+		{1.5f,  2.0f, -2.5f}, 
+		{1.5f,  0.2f, -1.5f}, 
+		{-1.3f,  1.0f, -1.5f}  
 	};
 
 	GLuint indices[] = {
@@ -163,6 +243,7 @@ int main(void)
 	);
 	glEnableVertexAttribArray(1);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glEnable(GL_DEPTH_TEST);
 
 	glUseProgram(program);
 	shaderprog_setint(&program, "tex1", 0);
@@ -173,6 +254,7 @@ int main(void)
 	float adt = 0.0f; //accumulated delta time
 	int done = 0;
 
+	game.positions = cubePositions;
 	game.texture1 = &texture1;
 	game.texture2 = &texture2;
 	game.program = &program;

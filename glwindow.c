@@ -13,7 +13,6 @@ struct GLWindow* glwindow_ctor(
 	log_assert(title, "is NULL");
 	log_assert(width > 0, "invalid width");
 	log_assert(height > 0, "invalid height");
-	log_assert(flags <= GLWINDOW_FULLSCREEN, "invalid flag: %i", flags);
 
 	self->raw = SDL_CreateWindow(
 		title,
