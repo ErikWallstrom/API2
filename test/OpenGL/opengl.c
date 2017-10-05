@@ -72,10 +72,12 @@ static void render(float tickrate, float adt)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, *game.texture2);
 
-	struct Mat4f view = MAT4F_IDENTITYMATRIX;
+	struct Mat4f view = MAT4F_IDENTITY;
 	mat4f_translate(&view, &(struct Vec3f){0.0f, 0.0f, -5.0f}, &view);
 
-	struct Mat4f projection = MAT4F_IDENTITYMATRIX;
+	struct Mat4f projection = MAT4F_IDENTITY;
+	mat4f_ortho(0.0f, game.window->width, 0.0f, game.window->height, 0.1f, 100.0f, &projection);
+	/*
 	mat4f_perspective(
 		RADIANS(70.0f), 
 		(float)game.window->width / game.window->height,
@@ -83,6 +85,7 @@ static void render(float tickrate, float adt)
 		100.0f,
 		&projection
 	);
+	*/
 
 	glUseProgram(*game.program);
 	shaderprog_setmat4f(game.program, "view", &view);
@@ -91,7 +94,7 @@ static void render(float tickrate, float adt)
 	glBindVertexArray(*game.vao);
 	for(size_t i = 0; i < 10; i++)
 	{
-		struct Mat4f model = MAT4F_IDENTITYMATRIX;
+		struct Mat4f model = MAT4F_IDENTITY;
 		mat4f_translate(&model, &game.positions[i], &model);
 		mat4f_rotate(RADIANS(50.0f) * SDL_GetTicks() / 500.0f, &(struct Vec3f){1.0f, 0.3f, 0.5f}, &model);
 		shaderprog_setmat4f(game.program, "model", &model);
