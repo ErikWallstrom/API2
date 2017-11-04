@@ -1,18 +1,38 @@
 #ifndef VEC4F_H
 #define VEC4F_H
 
+#include "vec3f.h"
+
 struct Vec4f
 {
-	float x, y, z;
-	float w;
+	union 
+	{
+		float scalars[4];
+		struct 
+		{
+			union 
+			{
+				struct Vec3f xyz;
+				struct
+				{
+					float x, y, z;
+				};
+			};
+			float w;
+		};
+		struct 
+		{
+			union 
+			{
+				struct Vec3f rgb;
+				struct
+				{
+					float r, g, b;
+				};
+			};
+			float a;
+		};
+	};
 };
-
-struct Vec4f* vec4f_ctor(
-	struct Vec4f* self, 
-	float x, 
-	float y, 
-	float z, 
-	float w
-);
 
 #endif

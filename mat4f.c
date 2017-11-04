@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-const struct Mat4f MAT4F_IDENTITYMATRIX = {
+const struct Mat4f MAT4F_IDENTITY = {
 	{
 		{1.0f, 0.0f, 0.0f, 0.0f},
 		{0.0f, 1.0f, 0.0f, 0.0f},
@@ -81,20 +81,22 @@ void mat4f_rotate(
 
 	float cval = cosf(angle);
 	float sval = sinf(angle);
+	float cvalminus = 1.0f - cval;
 
-	dest->scalars[0][0] = cval + vec->x * vec->x * (1 - cval);
-	dest->scalars[1][0] = vec->x * vec->y * (1 - cval) - vec->z * sval;
-	dest->scalars[2][0] = vec->x * vec->z * (1 - cval) + vec->y * sval;
+	dest->scalars[0][0] = vec->x * vec->x * cvalminus + cval;
+	dest->scalars[1][0] = vec->x * vec->y * cvalminus + vec->z * sval;
+	dest->scalars[2][0] = vec->x * vec->z * cvalminus - vec->y * sval;
 
-	dest->scalars[0][1] = vec->y * vec->x * (1 - cval) + vec->z * sval;
-	dest->scalars[1][1] = cval + vec->y * vec->y * (1 - cval);
-	dest->scalars[2][1] = vec->y * vec->z * (1 - cval) - vec->x * sval;
+	dest->scalars[0][1] = vec->y * vec->x * cvalminus - vec->z * sval;
+	dest->scalars[1][1] = vec->y * vec->y * cvalminus + cval;
+	dest->scalars[2][1] = vec->y * vec->z * cvalminus + vec->x * sval;
 
-	dest->scalars[0][2] = vec->z * vec->x * (1 - cval) - vec->y * sval;
-	dest->scalars[1][2] = vec->z * vec->y * (1 - cval) + vec->x * sval;
-	dest->scalars[2][2] = cval + vec->z * vec->z * (1 - cval);
+	dest->scalars[0][2] = vec->z * vec->x * cvalminus + vec->y * sval;
+	dest->scalars[1][2] = vec->z * vec->y * cvalminus - vec->x * sval;
+	dest->scalars[2][2] = vec->z * vec->z * cvalminus + cval;
 }
 
+//NOTE: Expects dest to already be set (for example to identity)
 void mat4f_perspective(
 	float fov, 
 	float aspect, 
@@ -105,29 +107,16 @@ void mat4f_perspective(
 {
 	log_assert(dest, "is NULL");
 	
-	float a = 1.0f / tanf(fov / 2.0f);
+	float a = 1.0f / tanf(fov * 0.5f);
 
 	dest->scalars[0][0] = a / aspect;
-	dest->scalars[0][1] = 0.0f;
-	dest->scalars[0][2] = 0.0f;
-	dest->scalars[0][3] = 0.0f;
-
-	dest->scalars[1][0] = 0.0f;
 	dest->scalars[1][1] = a;
-	dest->scalars[1][2] = 0.0f;
-	dest->scalars[1][3] = 0.0f;
-
-	dest->scalars[2][0] = 0.0f;
-	dest->scalars[2][1] = 0.0f;
-	dest->scalars[2][2] = -((far + near) / (far - near));
+	dest->scalars[2][2] = (near + far) / (near - far);
 	dest->scalars[2][3] = -1.0f;
-
-	dest->scalars[3][0] = 0.0f;
-	dest->scalars[3][1] = 0.0f;
-	dest->scalars[3][2] = -((2.0f * far * near) / (far - near));
-	dest->scalars[3][3] = 0.0f;
+	dest->scalars[3][2] = (2.0f * near * far) / (near - far);
 }
 
+//NOTE: Expects dest to already be set (for example to identity)
 void mat4f_ortho(
 	float left, 
 	float right, 
@@ -141,23 +130,11 @@ void mat4f_ortho(
 	log_assert(dest, "is NULL");
 
 	dest->scalars[0][0] = 2.0f / (right - left);
-	dest->scalars[0][1] = 0.0f;
-	dest->scalars[0][2] = 0.0f;
-	dest->scalars[0][3] = 0.0f;
-
 	dest->scalars[1][1] = 2.0f / (top - bottom);
-	dest->scalars[1][0] = 0.0f;
-	dest->scalars[1][2] = 0.0f;
-	dest->scalars[1][3] = 0.0f;
+	dest->scalars[2][2] = 2.0f / (near - far);
 
-	dest->scalars[2][2] = -2.0f / (far - near);
-	dest->scalars[2][0] = 0.0f;
-	dest->scalars[2][1] = 0.0f;
-	dest->scalars[2][3] = 0.0f;
-
-	dest->scalars[3][0] = -(right + left) / (right - left);
-	dest->scalars[3][1] = -(top + bottom) / (top - bottom);
-	dest->scalars[3][2] = -(far + near) / (far - near);
-	dest->scalars[3][3] = 1.0f;
+	dest->scalars[3][0] = (left + right) / (left - right);
+	dest->scalars[3][1] = (bottom + top) / (bottom - top);
+	dest->scalars[3][2] = (far + near) / (near - far);
 }
 
