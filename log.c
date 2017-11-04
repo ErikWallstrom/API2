@@ -3,6 +3,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
+static LogErrorCallback errorcallback;
+static void* errorudata;
+
 void log_msg(FILE* file, enum LogMsgType type, const char* fmt, ...)
 {
 	log_assert(file, "is NULL");
@@ -72,12 +75,19 @@ void log_msg(FILE* file, enum LogMsgType type, const char* fmt, ...)
 	fputs("\n", file);
 	va_end(vlist);
 
-	//NOTE: Should error abort the program?
-	/*
 	if(type == LOGMSGTYPE_ERROR)
 	{
-		abort();
-	}*/
+		if(errorcallback)
+		{
+			errorcallback(errorudata);
+		}
+	}
+}
+
+void log_seterrorhandler(LogErrorCallback callback, void* udata)
+{
+	errorcallback = callback;
+	errorudata = udata;
 }
 
 void log_assert_(

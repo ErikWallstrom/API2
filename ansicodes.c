@@ -19,25 +19,25 @@
 #define ANSICODE_UNDERLINE	"4"
 
 //Colors
-struct ANSICodeFg* ANSICODE_FG_BLACK	= &(struct ANSICodeFg){"30"};
-struct ANSICodeFg* ANSICODE_FG_RED 		= &(struct ANSICodeFg){"31"};
-struct ANSICodeFg* ANSICODE_FG_GREEN 	= &(struct ANSICodeFg){"32"};
-struct ANSICodeFg* ANSICODE_FG_YELLOW 	= &(struct ANSICodeFg){"33"};
-struct ANSICodeFg* ANSICODE_FG_BLUE 	= &(struct ANSICodeFg){"34"};
-struct ANSICodeFg* ANSICODE_FG_MAGENTA 	= &(struct ANSICodeFg){"35"};
-struct ANSICodeFg* ANSICODE_FG_CYAN 	= &(struct ANSICodeFg){"36"};
-struct ANSICodeFg* ANSICODE_FG_WHITE 	= &(struct ANSICodeFg){"37"};
-struct ANSICodeFg* ANSICODE_FG_DEFAULT 	= &(struct ANSICodeFg){"39"};
+const struct ANSICodeFg* const ANSICODE_FG_BLACK	= &(struct ANSICodeFg){"30"};
+const struct ANSICodeFg* const ANSICODE_FG_RED 		= &(struct ANSICodeFg){"31"};
+const struct ANSICodeFg* const ANSICODE_FG_GREEN 	= &(struct ANSICodeFg){"32"};
+const struct ANSICodeFg* const ANSICODE_FG_YELLOW 	= &(struct ANSICodeFg){"33"};
+const struct ANSICodeFg* const ANSICODE_FG_BLUE 	= &(struct ANSICodeFg){"34"};
+const struct ANSICodeFg* const ANSICODE_FG_MAGENTA 	= &(struct ANSICodeFg){"35"};
+const struct ANSICodeFg* const ANSICODE_FG_CYAN 	= &(struct ANSICodeFg){"36"};
+const struct ANSICodeFg* const ANSICODE_FG_WHITE 	= &(struct ANSICodeFg){"37"};
+const struct ANSICodeFg* const ANSICODE_FG_DEFAULT 	= &(struct ANSICodeFg){"39"};
 
-struct ANSICodeBg* ANSICODE_BG_BLACK 	= &(struct ANSICodeBg){"40"};
-struct ANSICodeBg* ANSICODE_BG_RED 		= &(struct ANSICodeBg){"41"};
-struct ANSICodeBg* ANSICODE_BG_GREEN 	= &(struct ANSICodeBg){"42"};
-struct ANSICodeBg* ANSICODE_BG_YELLOW 	= &(struct ANSICodeBg){"43"};
-struct ANSICodeBg* ANSICODE_BG_BLUE 	= &(struct ANSICodeBg){"44"};
-struct ANSICodeBg* ANSICODE_BG_MAGENTA 	= &(struct ANSICodeBg){"45"};
-struct ANSICodeBg* ANSICODE_BG_CYAN 	= &(struct ANSICodeBg){"46"};
-struct ANSICodeBg* ANSICODE_BG_WHITE 	= &(struct ANSICodeBg){"47"};
-struct ANSICodeBg* ANSICODE_BG_DEFAULT 	= &(struct ANSICodeBg){"49"};
+const struct ANSICodeBg* const ANSICODE_BG_BLACK 	= &(struct ANSICodeBg){"40"};
+const struct ANSICodeBg* const ANSICODE_BG_RED 		= &(struct ANSICodeBg){"41"};
+const struct ANSICodeBg* const ANSICODE_BG_GREEN 	= &(struct ANSICodeBg){"42"};
+const struct ANSICodeBg* const ANSICODE_BG_YELLOW 	= &(struct ANSICodeBg){"43"};
+const struct ANSICodeBg* const ANSICODE_BG_BLUE 	= &(struct ANSICodeBg){"44"};
+const struct ANSICodeBg* const ANSICODE_BG_MAGENTA 	= &(struct ANSICodeBg){"45"};
+const struct ANSICodeBg* const ANSICODE_BG_CYAN 	= &(struct ANSICodeBg){"46"};
+const struct ANSICodeBg* const ANSICODE_BG_WHITE 	= &(struct ANSICodeBg){"47"};
+const struct ANSICodeBg* const ANSICODE_BG_DEFAULT 	= &(struct ANSICodeBg){"49"};
 
 static int ansicode_checkfg(struct ANSICode* self)
 {

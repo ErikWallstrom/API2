@@ -35,7 +35,7 @@ struct File* file_ctor(
 	self->raw = fopen(path, m);
 	if(!self->raw)
 	{
-		log_error("%s", strerror(errno));
+		log_error("%s: '%s'", strerror(errno), path);
 	}
 
 	if(mode & FILEMODE_READ)

@@ -1,69 +1,129 @@
 #include "argparser.h"
 #include "log.h"
 
-struct ArgParserOpt* argparseropt_ctor(
-	struct ArgParserOpt* self,
-	char shortopt,
-	const char* longopt,
-	const char* info,
-	size_t numargs
+struct ArgParser* argparser_ctor(
+	struct ArgParser* self, 
+	int argc,
+	char** argv,
+	struct ArgParserLongOpt* opts, 
+	size_t numopts
 )
-{
-	self->info = info;
-	self->numargs = numargs;
-	self->longopt = longopt;
-	self->shortopt = shortopt;
-	self->used = 0;
-	self->args = vec_ctor(const char*, numargs);
+{ 
+	log_assert(self, "is NULL");
+	log_assert(argc, "non-standard argc");
+	log_assert(argv, "is NULL");
+	log_assert(*argv, "is NULL");
+	log_assert(opts, "is NULL");
+	log_assert(numopts, "why");
+
+	self->argv = argv;
+	self->opts = opts;
+	self->numopts = numopts;
+	self->results = vec_ctor(struct ArgParserResult, numopts);
+
+	for(size_t i = 0; i < numopts; i++)
+	{ 
+		vec_pushback(self->results, (struct ArgParserResult){0});
+	}
+
+	for(int i = 1; i < argc; i++)
+	{ 
+		if(argv[i][0] == '-' && argv[i][1] == '-')
+		{ 
+			if(argv[i][2] == '\0')
+			{ 
+				log_error("Expected option after '--'");
+			}
+
+			size_t arglen;
+			char* argpos = strchr(argv[i], '=');
+			if(argpos)
+			{ 
+				arglen = argpos - (argv[i] + 2);
+				if(!strlen(argpos + 1))
+				{ 
+					log_error("No argument was given after '='");
+				}
+			}
+			else
+			{ 
+				arglen = strlen(argv[i] + 2);
+			}
+
+			int found = 0;
+			for(size_t j = 0; j < numopts; j++)
+			{ 
+				size_t len = strlen(opts[j].opt);
+				if(len == arglen)
+				{ 
+					if(!memcmp(argv[i] + 2, opts[j].opt, len))
+					{ 
+						self->results[j].used = 1;
+						if((opts[j].hasarg))
+						{ 
+							if(argpos)
+							{ 
+								self->results[j].arg = argpos + 1;
+							}
+							else
+							{ 
+								if(argpos)
+								{ 
+									log_error(
+										"Option '%s' expects an argument",
+										opts[j].opt
+									);
+								}
+							}
+						}
+						else
+						{ 
+							if(argpos)
+							{ 
+								log_error(
+									"Option '%s' does not expect an argument",
+									opts[j].opt
+								);
+							}
+						}
+						found = 1;
+						break;
+					}
+				}
+			}
+
+			if(!found)
+			{ 
+				log_error("There is no option called '%s'", argv[i] + 2);
+			}
+		}
+		else
+		{ 
+			log_error("Expected '--' before option");
+		}
+	}
 
 	return self;
 }
 
-void argparser_printhelp(
-	struct ArgParserOpt* options, 
-	size_t numoptions,
-	const char* progname
-)
-{
-	log_assert(options, "is NULL");
-	log_assert(numoptions > 0, "are you retarded? 0 options makes no sense");
-	log_assert(progname, "is NULL");
+void argparser_printhelp(struct ArgParser* self)
+{ 
+	log_assert(self, "is NULL");
 
-	printf("Usage: %s [OPTIONS -", progname);
-	for(size_t i = 0; i < numoptions; i++)
+	printf("Usage: %s [options] [--option=arg]\nOptions:\n", self->argv[0]);
+	for(size_t i = 0; i < self->numopts; i++)
 	{
-		putchar(options[i].shortopt);
-	}
+		printf("    --%s", self->opts[i].opt);
 
-	puts("]\nOptions:");
-	for(size_t i = 0; i < numoptions; i++)
-	{
-		printf("    ");
-		if(options[i].shortopt != '\0')
+		if(self->opts[i].info)
 		{
-			printf("-%c, ", options[i].shortopt);
-		}
-		else
-		{
-			printf("    ");
-		}
-
-		if(options[i].longopt)
-		{
-			printf("--%s", options[i].longopt);
-		}
-
-		if(options[i].info)
-		{
-			int gap = (options[i].longopt) ? 
-				15 - strlen(options[i].longopt) : 15;
-
+			int gap = 15 - strlen(self->opts[i].opt);
 			for(int j = 0; j < gap; j++)
 			{
 				putchar(' ');
 			}
 
-			puts(options[i].info);
+			puts(self->opts[i].info);
 		}
 		else
 		{
@@ -74,56 +134,9 @@ void argparser_printhelp(
 	putchar('\n');
 }
 
-int argparser_parse(
-	const char* argv[], 
-	int argc, 
-	struct ArgParserOpt* options, 
-	size_t numoptions
-)
-{
-	(void)argv;
-	(void)argc;
-	(void)options;
-	(void)numoptions;
-
-	//TODO: Complete this. I am to tired to implement this function
-	/*
-	log_assert(argv, "is NULL");
-	log_assert(options, "is NULL");
-	log_assert(numoptions > 0, "are you retarded? 0 options makes no sense");
-
-	int result = 1;
-	for(int i = 1; i < argc; i++)
-	{
-		if(argv[i][0] == '-')
-		{
-			if(argv[i][1] == '-')
-			{
-				if(argv[i][2] == '\0') //Next is argument
-				{
-
-				}
-				else //Long option
-				{
-
-				}
-			}
-			else //Short option
-			{
-				for(size_t j = 0; i < numoptions; i++)
-				{
-					if(argv[i])
-				}
-			}
-		}
-		else //Normal argument
-		{
-
-		}
-	}
-
-	return result;
-	*/
-	return 0; //XXX
+void argparser_dtor(struct ArgParser* self)
+{ 
+	log_assert(self, "is NULL");
+	vec_dtor(self->results);
 }
 
