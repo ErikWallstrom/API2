@@ -21,7 +21,7 @@ struct Window* window_ctor(
 		width,
 		height,
 		(flags & WINDOW_FULLSCREEN) ? 
-			SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_SHOWN
+			SDL_WINDOW_FULLSCREEN : SDL_WINDOW_SHOWN
 	);
 	if(!self->raw)
 	{
@@ -65,6 +65,11 @@ void window_render(struct Window* self)
 		self->seconds = SDL_GetTicks() / 1000;
 		self->fps = self->frames;
 		self->frames = 0;
+	}
+
+	if(SDL_GetWindowFlags(self->raw) & SDL_WINDOW_MINIMIZED)
+	{
+		SDL_Delay(1000 / 60); //Limit framerate while minimized (fix SDL bug)
 	}
 }
 

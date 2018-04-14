@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+//TODO: Maybe add lastmessage and pass it to errorcallback
 static LogErrorCallback errorcallback;
 static void* errorudata;
 

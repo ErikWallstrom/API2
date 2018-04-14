@@ -44,20 +44,46 @@ struct Texture* texture_ctortext(
 	self->width = 0;
 	self->height = lineheight;
 
+	int newwidth = -1;
 	for(size_t i = 0; i < strlen(text); i++)
 	{
 		if(text[i] >= ' ' && text[i] <= '~')
 		{
-			self->width += font->atlas[text[i] - ' '].width;
+			if(newwidth != -1)
+			{
+				newwidth += font->atlas[text[i] - ' '].width;
+				if(newwidth > self->width)
+				{
+					self->width = newwidth;
+					newwidth = -1;
+				}
+			}
+			else
+			{
+				self->width += font->atlas[text[i] - ' '].width;
+			}
 		}
 		else if(text[i] == '\t')
 		{
 			//atlas[0] is space character. Tab = 4 spaces
-			self->width += font->atlas[0].width * 4;
+			if(newwidth != -1)
+			{
+				newwidth += font->atlas[0].width * 4;
+				if(newwidth > self->width)
+				{
+					self->width = newwidth;
+					newwidth = -1;
+				}
+			}
+			else
+			{
+				self->width += font->atlas[0].width * 4;
+			}
 		}
 		else if(text[i] == '\n')
 		{
 			self->height += lineheight;
+			newwidth = 0;
 		}
 		else
 		{
@@ -79,8 +105,10 @@ struct Texture* texture_ctortext(
 	}
 
 	//NOTE: Line below makes transparency work for two textures on eachother
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 	SDL_SetTextureBlendMode(self->raw, SDL_BLENDMODE_BLEND);
 	SDL_SetRenderTarget(renderer, self->raw);
+	SDL_RenderClear(renderer);
 
 	int x = 0;
 	int y = 0;

@@ -10,6 +10,16 @@ struct InputHandler* inputhandler_ctor(struct InputHandler* self)
 	self->keystate = SDL_GetKeyboardState(NULL);
 	self->mousestate = SDL_GetMouseState(&self->mousex, &self->mousey);
 
+	if(SDL_NumJoysticks() && SDL_IsGameController(0)) //Uses the first one
+	{
+		self->controller = SDL_GameControllerOpen(0);
+	}
+	else
+	{
+		self->controller = NULL;
+		log_warning("No compatible game controllers found");
+	}
+
 	return self;
 }
 
@@ -30,6 +40,12 @@ void inputhandler_update(struct InputHandler* self)
 void inputhandler_dtor(struct InputHandler* self)
 {
 	log_assert(self, "is NULL");
+
+	if(self->controller)
+	{
+		SDL_GameControllerClose(self->controller);
+	}
+
 	vec_dtor(self->events);
 }
 

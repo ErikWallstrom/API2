@@ -6,6 +6,7 @@
 
 struct InputHandler
 {
+	SDL_GameController* controller;
 	Vec(SDL_Event) events;
 	const Uint8* keystate;
 	Uint32 mousestate;
