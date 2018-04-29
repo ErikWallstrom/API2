@@ -18,7 +18,6 @@ struct Window
 	const char* title;
 	int width, height;
 	int flags;
-	unsigned fps, frames, seconds;
 };
 
 struct Window* window_ctor(

@@ -3,7 +3,18 @@
 
 struct Vec2d
 {
-	double x, y;
+	union 
+	{
+		double scalars[2];
+		struct 
+		{
+			double x, y;
+		};
+		struct 
+		{
+			double width, height;
+		};
+	};
 };
 
 struct Vec2d* vec2d_ctor(struct Vec2d* self, double x, double y);

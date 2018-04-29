@@ -17,7 +17,10 @@ struct InputHandler* inputhandler_ctor(struct InputHandler* self)
 	else
 	{
 		self->controller = NULL;
-		log_warning("No compatible game controllers found");
+		log_warning(
+			"No compatible game controllers found (%s)", 
+			SDL_GetError()
+		);
 	}
 
 	return self;

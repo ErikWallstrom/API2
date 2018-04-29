@@ -34,6 +34,14 @@ struct Window* window_ctor(
 		renderflags |= SDL_RENDERER_PRESENTVSYNC;
 	}
 
+	if(flags & WINDOW_FULLSCREEN)
+	{
+		if(!SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0"))
+		{
+			log_warning("Unable to set hint (%s)", SDL_GetError());
+		}
+	}
+
 	self->renderer = SDL_CreateRenderer(self->raw, -1, renderflags);
 	if(!self->renderer)
 	{
@@ -46,9 +54,6 @@ struct Window* window_ctor(
 	self->flags = flags;
 	self->width = width;
 	self->height = height;
-	self->fps = 0;
-	self->frames = 0;
-	self->seconds = SDL_GetTicks() / 1000;
 
 	return self;
 }
@@ -58,14 +63,6 @@ void window_render(struct Window* self)
 	log_assert(self, "is NULL");
 	SDL_RenderPresent(self->renderer);
 	SDL_RenderClear(self->renderer);
-
-	self->frames++;
-	if(SDL_GetTicks() / 1000 > self->seconds)
-	{
-		self->seconds = SDL_GetTicks() / 1000;
-		self->fps = self->frames;
-		self->frames = 0;
-	}
 
 	if(SDL_GetWindowFlags(self->raw) & SDL_WINDOW_MINIMIZED)
 	{
