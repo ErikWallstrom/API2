@@ -73,11 +73,10 @@ static void render(float tickrate, float adt)
 	glBindTexture(GL_TEXTURE_2D, *game.texture2);
 
 	struct Mat4f view = MAT4F_IDENTITY;
-	mat4f_translate(&view, &(struct Vec3f){0.0f, 0.0f, -5.0f}, &view);
+	mat4f_translate(&view, &(struct Vec3f){.x = 0.0f, .y = 0.0f, .z = -5.0f}, &view);
 
 	struct Mat4f projection = MAT4F_IDENTITY;
-	mat4f_ortho(0.0f, game.window->width, 0.0f, game.window->height, 0.1f, 100.0f, &projection);
-	/*
+	//mat4f_ortho(0.0f, game.window->width, 0.0f, game.window->height, 0.1f, 100.0f, &projection);
 	mat4f_perspective(
 		RADIANS(70.0f), 
 		(float)game.window->width / game.window->height,
@@ -85,7 +84,6 @@ static void render(float tickrate, float adt)
 		100.0f,
 		&projection
 	);
-	*/
 
 	glUseProgram(*game.program);
 	shaderprog_setmat4f(game.program, "view", &view);
@@ -96,13 +94,13 @@ static void render(float tickrate, float adt)
 	{
 		struct Mat4f model = MAT4F_IDENTITY;
 		mat4f_translate(&model, &game.positions[i], &model);
-		mat4f_rotate(RADIANS(50.0f) * SDL_GetTicks() / 500.0f, &(struct Vec3f){1.0f, 0.3f, 0.5f}, &model);
+		mat4f_rotate(RADIANS(50.0f) * SDL_GetTicks() / 500.0f, &(struct Vec3f){.x = 1.0f, .y = 0.3f, .z = 0.5f}, &model);
 		shaderprog_setmat4f(game.program, "model", &model);
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glwindow_render(game.window);
 }
 
@@ -198,16 +196,16 @@ int main(void)
 	};
 
 	struct Vec3f cubePositions[] = {
-		{0.0f,  0.0f,  0.0f}, 
-		{2.0f,  5.0f, -15.0f}, 
-		{-1.5f, -2.2f, -2.5f},  
-		{-3.8f, -2.0f, -12.3f},  
-		{2.4f, -0.4f, -3.5f},  
-		{-1.7f,  3.0f, -7.5f},  
-		{1.3f, -2.0f, -2.5f},  
-		{1.5f,  2.0f, -2.5f}, 
-		{1.5f,  0.2f, -1.5f}, 
-		{-1.3f,  1.0f, -1.5f}  
+		{.x = 0.0f,  .y = 0.0f,  .z = 0.0f}, 
+		{.x = 2.0f,  .y = 5.0f,  .z = -15.0f}, 
+		{.x = -1.5f, .y = -2.2f, .z = -2.5f},  
+		{.x = -3.8f, .y = -2.0f, .z = -12.3f},  
+		{.x = 2.4f,  .y = -0.4f, .z = -3.5f},  
+		{.x = -1.7f, .y = 3.0f,  .z = -7.5f},  
+		{.x = 1.3f,  .y = -2.0f, .z = -2.5f},  
+		{.x = 1.5f,  .y = 2.0f,  .z = -2.5f}, 
+		{.x = 1.5f,  .y = 0.2f,  .z = -1.5f}, 
+		{.x = -1.3f, .y = 1.0f,  .z = -1.5f}  
 	};
 
 	GLuint indices[] = {

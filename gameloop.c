@@ -74,6 +74,7 @@ void gameloop_start(struct GameLoop* self)
 				if(self->timedcallbacks[i].active)
 				{
 					self->timedcallbacks[i].curtime += self->tickrate;
+					//Is the timing really accurate?
 					if(self->timedcallbacks[i].curtime
 						- self->timedcallbacks[i].oldtime
 						>= self->timedcallbacks[i].delay)
@@ -115,7 +116,7 @@ GameLoopCallbackID gameloop_addcallback(
 {
 	log_assert(self, "is NULL");
 	log_assert(callback.func, "is NULL");
-	log_assert(delay > 0.0, "%f is not a valid delay", delay);
+	log_assert(delay > self->tickrate, "%f is not a valid delay", delay);
 
 	vec_pushback(
 		self->timedcallbacks, 
@@ -136,6 +137,7 @@ void gameloop_removecallback(struct GameLoop* self, GameLoopCallbackID id)
 	log_assert(self, "is NULL");
 	log_assert(id < vec_getsize(self->timedcallbacks), "invalid id (%zu)", id);
 
+	//NOTE: Memory will not be freed
 	self->timedcallbacks[id].active = 0;
 }
 
