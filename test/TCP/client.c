@@ -16,11 +16,6 @@ void update(struct GameLoop* loop, void* userdata)
 	struct TCPClient* client = userdata;
 	tcpclient_update(client);
 
-	char buffer[TCPCLIENT_BUFSIZE];
-	strcpy(buffer, "Hello!");
-	log_info("Sending: \"%s\" to %s:%s", buffer, client->ip, client->port);
-	tcpclient_send(client, buffer, strlen(buffer));
-	sent++;
 	if(tcpclient_recv(client))
 	{
 		log_info(
@@ -32,6 +27,14 @@ void update(struct GameLoop* loop, void* userdata)
 		);
 
 		received++;
+	}
+	else
+	{
+		char buffer[TCPCLIENT_BUFSIZE];
+		strcpy(buffer, "Hello!");
+		log_info("Sending: \"%s\" to %s:%s", buffer, client->ip, client->port);
+		tcpclient_send(client, buffer, strlen(buffer));
+		sent++;
 	}
 }
 
@@ -47,7 +50,7 @@ int main(void)
 	log_seterrorhandler(onerror, NULL);
 	
 	struct TCPClient client;
-	tcpclient_ctor(&client, "192.168.0.11", "25565");
+	tcpclient_ctor(&client, "test.foridas.se", "80");
 
 	struct GameLoop loop;
 	gameloop_ctor(
@@ -60,7 +63,7 @@ int main(void)
 	gameloop_addcallback(
 		&loop, 
 		(struct GameLoopCallback){finish, NULL},
-		5000
+		20000
 	);
 	gameloop_start(&loop);
 	gameloop_dtor(&loop);

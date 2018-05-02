@@ -2,14 +2,10 @@
 #include "log.h"
 
 #include <netinet/tcp.h>
-#include <netdb.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
+#include <netdb.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <errno.h>
 
 struct TCPCLientHeader

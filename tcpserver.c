@@ -1,9 +1,9 @@
 #include "tcpserver.h"
 #include "log.h"
+
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
 
