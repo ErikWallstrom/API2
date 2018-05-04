@@ -21,14 +21,13 @@ static uint64_t getperformancecount(void)
 
 struct GameLoop* gameloop_ctor(
 	struct GameLoop* self, 
-	double tickrate, 
+	uint8_t tickspersec, 
 	struct GameLoopCallback update,
 	struct GameLoopCallback render)
 {
 	log_assert(self, "is NULL");
-	log_assert(tickrate > 0.0, "%f is not a valid tick rate", tickrate);
 
-	self->tickrate = tickrate;
+	self->tickrate = 1000.0 / tickspersec;
 	self->oldtime = getperformancecount();
 	self->tickscount = 0;
 	self->framescount = 0;
@@ -109,6 +108,7 @@ void gameloop_start(struct GameLoop* self)
 	}
 }
 
+//Callbacks will be called after `update` function
 GameLoopCallbackID gameloop_addcallback(
 	struct GameLoop* self, 
 	struct GameLoopCallback callback,

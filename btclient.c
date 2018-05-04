@@ -1,75 +1,129 @@
-#include "tcpclient.h"
+#include "btclient.h"
 #include "log.h"
 
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h> //NOTE: Include order important
+#include <bluetooth/hci_lib.h>
+#include <bluetooth/rfcomm.h>
 #include <unistd.h>
-#include <netdb.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
 
-struct TCPClient* tcpclient_ctor(
-	struct TCPClient* self, 
+#define BTCLIENT_MAXNUMINFO 32 //NOTE: Arbitrarily chosen
+#define BTCLIENT_SEARCHTIME 5 //Search for 1.28 * 5 sec
+
+struct BTClient* btclient_ctor(
+	struct BTClient* self, 
 	const char* addr, 
-	const char* port)
+	int isname)
 {
 	log_assert(self, "is NULL");
 	log_assert(addr, "is NULL");
-	log_assert(strlen(addr) < TCPCLIENT_ADDRLENGTH, "invalid size (%s)", addr);
-	log_assert(strlen(port) < TCPCLIENT_PORTLENGTH, "invalid size (%s)", port);
+	log_assert(strlen(addr) < BTCLIENT_ADDRLENGTH, "invalid size (%s)", addr);
 
-	struct addrinfo hints = {0};
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
+	struct sockaddr_rc serveraddr;
+	serveraddr.rc_family = AF_BLUETOOTH;
+	serveraddr.rc_channel = 1; //NOTE: Should this be modifiable?
 
-	struct addrinfo* info;
-	int result = getaddrinfo(addr, port, &hints, &info);
-	if(result != 0)
+	int device = hci_get_route(NULL); //Get first available bt device id
+	if(device == -1)
 	{
-		log_error("%s", gai_strerror(result));
+		log_error("%s", strerror(errno));
 	}
 
-	self->socket = socket(AF_INET, SOCK_STREAM, 0);
+	int devicesocket = hci_open_dev(device);
+	if(devicesocket == -1)
+	{
+		log_error("%s", strerror(errno));
+	}
+		
+	if(isname)
+	{
+		inquiry_info* info = malloc(sizeof(inquiry_info) * BTCLIENT_MAXNUMINFO);
+		if(!info)
+		{
+			log_error("Memory allocation failed (%s)", strerror(errno));
+		}
+
+		int numinfo = hci_inquiry( //Start searching
+			device, 
+			BTCLIENT_SEARCHTIME,
+			BTCLIENT_MAXNUMINFO, 
+			NULL, 
+			&info, 
+			IREQ_CACHE_FLUSH //Do not display previously found devices
+		);
+		if(numinfo == -1)
+		{
+			log_error("%s", strerror(errno));
+		}
+
+		int found = 0;
+		for(int i = 0; i < numinfo; i++)
+		{
+			int result = hci_read_remote_name(
+				devicesocket, 
+				&info[i].bdaddr, 
+				BTCLIENT_MAXNAMELENGTH, 
+				self->name, 
+				0 //Timeout in milliseconds
+			);
+			if(result == -1)
+			{
+				log_error("%s", strerror(errno));
+			}
+
+			if(!strcmp(self->name, addr))
+			{
+				serveraddr.rc_bdaddr = info[i].bdaddr;
+				ba2str(&info[i].bdaddr, self->addr);
+				found = 1;
+				break;
+			}
+		}
+
+		if(!found)
+		{
+			log_error("Unable to find host \"%s\"", addr);
+		}
+
+		free(info);
+	}
+	else
+	{
+		int result = str2ba(addr, &serveraddr.rc_bdaddr);
+		if(result == -1)
+		{
+			log_error("%s", strerror(errno));
+		}
+
+		result = hci_read_remote_name(
+			devicesocket, 
+			&serveraddr.rc_bdaddr,
+			BTCLIENT_MAXNAMELENGTH, 
+			self->name,
+			0
+		);
+		if(result == -1)
+		{
+			strcpy(self->name, "Unknown");
+		}
+
+		strcpy(self->addr, addr);
+	}
+
+	close(devicesocket);
+	self->socket = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	if(self->socket == -1)
 	{
 		log_error("%s", strerror(errno));
 	}
 
-	struct addrinfo* node;
-	for(node = info; node != NULL; node = node->ai_next)
-	{
-		result = connect(self->socket, node->ai_addr, node->ai_addrlen);
-		if(result == -1)
-		{
-			continue;
-		}
-
-		break;
-	}
-
-	if(node == NULL)
-	{
-		log_error("%s", strerror(errno));
-	}
-
-	strcpy(self->port, port);
-	if(!inet_ntop(
-		AF_INET, 
-		&((struct sockaddr_in*)node->ai_addr)->sin_addr,
-		self->ip,
-		TCPCLIENT_ADDRLENGTH))
-	{
-		log_error("%s", strerror(errno));
-	}
-
-	freeaddrinfo(info);
-
-	result = setsockopt(
+	int result = connect(
 		self->socket, 
-		IPPROTO_TCP, 
-		TCP_NODELAY, 
-		&(int){1},
-		sizeof(int)
+		(struct sockaddr*)&serveraddr, 
+		sizeof serveraddr
 	);
 	if(result == -1)
 	{
@@ -82,13 +136,13 @@ struct TCPClient* tcpclient_ctor(
 		log_error("%s", strerror(errno));
 	}
 
-	self->sendqueue = vec_ctor(struct TCPClientTransmission, 0);
+	self->sendqueue = vec_ctor(struct BTClientTransmission, 0);
 	self->delivery.length = 0; //No incoming delivery 
+
 	return self;
 }
 
-//NOTE: Should be called before tcpclient_recv and tcpclient_send
-void tcpclient_update(struct TCPClient* self)
+void btclient_update(struct BTClient* self)
 {
 	log_assert(self, "is NULL");
 
@@ -116,7 +170,7 @@ void tcpclient_update(struct TCPClient* self)
 			}
 			else if(result == 0)
 			{
-				log_error("%s:%s disconnected", self->ip, self->port);
+				log_error("%s disconnected", self->addr);
 			}
 			else
 			{
@@ -129,7 +183,7 @@ void tcpclient_update(struct TCPClient* self)
 		int result = recv(
 			self->socket, 
 			self->delivery.buffer, 
-			TCPCLIENT_BUFSIZE,
+			BTCLIENT_BUFSIZE,
 			0
 		);
 		if(result == -1)
@@ -141,7 +195,7 @@ void tcpclient_update(struct TCPClient* self)
 		}
 		else if(result == 0)
 		{
-			log_error("%s:%s disconnected", self->ip, self->port);
+			log_error("%s disconnected", self->addr);
 		}
 		else
 		{
@@ -186,16 +240,15 @@ void tcpclient_update(struct TCPClient* self)
 	}
 }
 
-void tcpclient_send(struct TCPClient* self, const char* msg, uint8_t len)
+void btclient_send(struct BTClient* self, const char* msg, uint8_t len)
 {
 	//TODO: Check if msg need copying, implement send queue
-
 	log_assert(self, "is NULL");
 	log_assert(msg, "is NULL");
 	log_assert(len < 255, "invalid length");
 	log_assert(len > 0, "invalid length");
 
-	struct TCPClientTransmission transmission;
+	struct BTClientTransmission transmission;
 	strcpy(transmission.buffer + 1, msg);
 	transmission.buffer[0] = len + 1;
 	transmission.length = len + 1;
@@ -203,7 +256,7 @@ void tcpclient_send(struct TCPClient* self, const char* msg, uint8_t len)
 	vec_push(self->sendqueue, transmission);
 }
 
-int tcpclient_recv(struct TCPClient* self)
+int btclient_recv(struct BTClient* self)
 {
 	log_assert(self, "is NULL");
 
@@ -218,7 +271,7 @@ int tcpclient_recv(struct TCPClient* self)
 	return 0;
 }
 
-void tcpclient_dtor(struct TCPClient* self)
+void btclient_dtor(struct BTClient* self)
 {
 	log_assert(self, "is NULL");
 

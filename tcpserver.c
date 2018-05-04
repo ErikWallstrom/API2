@@ -32,11 +32,7 @@ struct TCPServer* tcpserver_ctor(
 		.sin_zero = {0}
 	};
 
-	int status = bind(
-		self->socket, 
-		(struct sockaddr*)&addr, 
-		sizeof addr
-	);
+	int status = bind(self->socket, (struct sockaddr*)&addr, sizeof addr);
 	if(status == -1)
 	{
 		log_error("%s", strerror(errno));
@@ -99,10 +95,7 @@ void tcpserver_update(struct TCPServer* self)
 
 			struct TCPClient serverclient;
 			serverclient.socket = client;
-			serverclient.sendqueue = vec_ctor(
-				struct TCPClientTransmission, 
-				0
-			);
+			serverclient.sendqueue = vec_ctor(struct TCPClientTransmission, 0);
 			serverclient.delivery.length = 0; //No incoming delivery 
 			sprintf(serverclient.port, "%i", ntohs(addr.sin_port));
 			inet_ntop(

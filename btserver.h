@@ -1,45 +1,22 @@
 #ifndef BTSERVER_H
 #define BTSERVER_H
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/rfcomm.h>
+#include "btclient.h"
+#include "vec.h"
 
-			self->socket = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
-			if(self->socket == -1)
-			{
-				log_error("%s", strerror(errno));
-			}
+#define BTSERVER_MAXNAMELENGTH BTCLIENT_MAXNAMELENGTH
 
-			struct sockaddr_rc addr = {
-				.rc_family = AF_BLUETOOTH,
-				.rc_bdaddr = *BDADDR_ANY,
-				.rc_channel = 1
-			};
+struct BTServer
+{
+	char name[BTSERVER_MAXNAMELENGTH];
+	Vec(struct BTClient) clients;
+	size_t maxclients;
+	int socket;
+	int devicesocket;
+};
 
-			int status = bind(
-				self->socket, 
-				(struct sockaddr*)&addr, 
-				sizeof addr
-			);
-			if(status == -1)
-			{
-				log_error("%s", strerror(errno));
-			}
-
-			status = fcntl(
-				self->socket, 
-				F_SETFL, 
-				fcntl(self->socket, F_GETFL, 0) | O_NONBLOCK
-			);
-			if(status == -1)
-			{
-				log_error("%s", strerror(errno));
-			}
-
-			status = listen(self->socket, maxclients);
-			if(status == -1)
-			{
-				log_error("%s", strerror(errno));
-			}
+struct BTServer* btserver_ctor(struct BTServer* self, size_t maxclients);
+void btserver_update(struct BTServer* self);
+void btserver_dtor(struct BTServer* self);
 
 #endif

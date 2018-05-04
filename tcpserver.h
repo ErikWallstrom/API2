@@ -4,8 +4,6 @@
 #include "tcpclient.h"
 #include "vec.h"
 
-typedef size_t TCPServerClientID;
-
 struct TCPServer
 {
 	Vec(struct TCPClient) clients;

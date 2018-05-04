@@ -50,12 +50,12 @@ int main(void)
 	log_seterrorhandler(onerror, NULL);
 
 	struct TCPServer server;
-	tcpserver_ctor(&server, 25565, 4);
+	tcpserver_ctor(&server, 80, 4);
 
 	struct GameLoop loop;
 	gameloop_ctor(
 		&loop, 
-		1000.0 / 30.0, 
+		30, 
 		(struct GameLoopCallback){update, &server}, 
 		(struct GameLoopCallback){NULL, NULL}
 	);

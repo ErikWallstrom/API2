@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include "vec.h"
 
-#define TCPCLIENT_IPLENGTH 16
+#define TCPCLIENT_ADDRLENGTH 16
 #define TCPCLIENT_PORTLENGTH 6
 #define TCPCLIENT_BUFSIZE 256
 
@@ -19,7 +19,7 @@ struct TCPClientTransmission
 struct TCPClient
 {
 	struct TCPClientTransmission delivery;
-	char ip[TCPCLIENT_IPLENGTH];
+	char ip[TCPCLIENT_ADDRLENGTH];
 	Vec(struct TCPClientTransmission) sendqueue;
 	char port[TCPCLIENT_PORTLENGTH];
 	int socket;

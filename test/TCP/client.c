@@ -50,12 +50,12 @@ int main(void)
 	log_seterrorhandler(onerror, NULL);
 	
 	struct TCPClient client;
-	tcpclient_ctor(&client, "test.foridas.se", "80");
+	tcpclient_ctor(&client, "localhost", "80");
 
 	struct GameLoop loop;
 	gameloop_ctor(
 		&loop, 
-		1000.0 / 30.0, 
+		30, 
 		(struct GameLoopCallback){update, &client}, 
 		(struct GameLoopCallback){NULL, NULL}
 	);

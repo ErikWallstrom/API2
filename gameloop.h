@@ -25,6 +25,8 @@ struct GameLoopTimedCallback
 
 struct GameLoop
 {
+	struct GameLoopCallback update;
+	struct GameLoopCallback render;
 	uint64_t oldtime;
 	uint64_t curtime;
 	uint64_t tickscount;
@@ -37,14 +39,12 @@ struct GameLoop
 	double interpolation;
 	double tickrate;
 	Vec(struct GameLoopTimedCallback) timedcallbacks;
-	struct GameLoopCallback update;
-	struct GameLoopCallback render;
 	int done;
 };
 
 struct GameLoop* gameloop_ctor(
 	struct GameLoop* self, 
-	double tickrate, 
+	uint8_t tickspersec, 
 	struct GameLoopCallback update,
 	struct GameLoopCallback render
 );
