@@ -9,6 +9,12 @@
 #define TCPCLIENT_PORTLENGTH 6
 #define TCPCLIENT_BUFSIZE 256
 
+struct TCPClient;
+typedef void(*TCPClientDisconnect)(
+	struct TCPClient* client, 
+	void* userdata
+);
+
 struct TCPClientTransmission
 {
 	char buffer[TCPCLIENT_BUFSIZE];
@@ -20,6 +26,8 @@ struct TCPClient
 {
 	struct TCPClientTransmission delivery;
 	char ip[TCPCLIENT_ADDRLENGTH];
+	TCPClientDisconnect ondisconnect;
+	void* userdata;
 	Vec(struct TCPClientTransmission) sendqueue;
 	char port[TCPCLIENT_PORTLENGTH];
 	int socket;
@@ -28,7 +36,9 @@ struct TCPClient
 struct TCPClient* tcpclient_ctor(
 	struct TCPClient* self, 
 	const char* ip, 
-	const char* port
+	const char* port,
+	TCPClientDisconnect ondisconnect,
+	void* userdata
 );
 void tcpclient_update(struct TCPClient* self);
 void tcpclient_send(struct TCPClient* self, const char* msg, uint8_t len);

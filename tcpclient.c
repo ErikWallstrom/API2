@@ -11,11 +11,12 @@
 struct TCPClient* tcpclient_ctor(
 	struct TCPClient* self, 
 	const char* addr, 
-	const char* port)
+	const char* port,
+	TCPClientDisconnect ondisconnect,
+	void* userdata)
 {
 	log_assert(self, "is NULL");
 	log_assert(addr, "is NULL");
-	log_assert(strlen(addr) < TCPCLIENT_ADDRLENGTH, "invalid size (%s)", addr);
 	log_assert(strlen(port) < TCPCLIENT_PORTLENGTH, "invalid size (%s)", port);
 
 	struct addrinfo hints = {0};
@@ -84,6 +85,8 @@ struct TCPClient* tcpclient_ctor(
 
 	self->sendqueue = vec_ctor(struct TCPClientTransmission, 0);
 	self->delivery.length = 0; //No incoming delivery 
+	self->ondisconnect = ondisconnect;
+	self->userdata = userdata;
 	return self;
 }
 
@@ -91,6 +94,48 @@ struct TCPClient* tcpclient_ctor(
 void tcpclient_update(struct TCPClient* self)
 {
 	log_assert(self, "is NULL");
+
+	if(!self->delivery.length)
+	{
+		int result = recv(
+			self->socket, 
+			self->delivery.buffer, 
+			TCPCLIENT_BUFSIZE,
+			MSG_PEEK
+		);
+		if(result == -1)
+		{
+			if(errno != EAGAIN && errno != EWOULDBLOCK)
+			{
+				if(self->ondisconnect)
+				{
+					self->ondisconnect(self, self->userdata);
+					return;
+				}
+				else
+				{
+					log_error("%s", strerror(errno));
+				}
+			}
+		}
+		else if(result == 0)
+		{
+			if(self->ondisconnect)
+			{
+				self->ondisconnect(self, self->userdata);
+				return;
+			}
+			else
+			{
+				log_error("Disconnected (%s)", strerror(errno));
+			}
+		}
+		else
+		{
+			self->delivery.length = (uint8_t)self->delivery.buffer[0];
+			self->delivery.progress = 0;
+		}
+	}
 
 	if(self->delivery.length)
 	{
@@ -111,43 +156,33 @@ void tcpclient_update(struct TCPClient* self)
 			{
 				if(errno != EAGAIN && errno != EWOULDBLOCK)
 				{
-					log_error("%s", strerror(errno));
+					if(self->ondisconnect)
+					{
+						self->ondisconnect(self, self->userdata);
+						return;
+					}
+					else
+					{
+						log_error("%s", strerror(errno));
+					}
 				}
 			}
 			else if(result == 0)
 			{
-				log_error("%s:%s disconnected", self->ip, self->port);
+				if(self->ondisconnect)
+				{
+					self->ondisconnect(self, self->userdata);
+					return;
+				}
+				else
+				{
+					log_error("Disconnected (%s)", strerror(errno));
+				}
 			}
 			else
 			{
 				self->delivery.progress += result;
 			} 
-		}
-	}
-	else
-	{
-		int result = recv(
-			self->socket, 
-			self->delivery.buffer, 
-			TCPCLIENT_BUFSIZE,
-			0
-		);
-		if(result == -1)
-		{
-			if(errno != EAGAIN && errno != EWOULDBLOCK)
-			{
-				log_error("%s", strerror(errno));
-			}
-		}
-		else if(result == 0)
-		{
-			log_error("%s:%s disconnected", self->ip, self->port);
-		}
-		else
-		{
-			self->delivery.length = (uint8_t)self->delivery.buffer[0];
-			self->delivery.progress = 0;
-			self->delivery.progress += result;
 		}
 	}
 
@@ -173,7 +208,12 @@ void tcpclient_update(struct TCPClient* self)
 			);
 			if(result == -1)
 			{
-				if(errno != EAGAIN && errno != EWOULDBLOCK)
+				if(self->ondisconnect)
+				{
+					self->ondisconnect(self, self->userdata);
+					return;
+				}
+				else
 				{
 					log_error("%s", strerror(errno));
 				}
@@ -196,7 +236,7 @@ void tcpclient_send(struct TCPClient* self, const char* msg, uint8_t len)
 	log_assert(len > 0, "invalid length");
 
 	struct TCPClientTransmission transmission;
-	strcpy(transmission.buffer + 1, msg);
+	memcpy(transmission.buffer + 1, msg, len);
 	transmission.buffer[0] = len + 1;
 	transmission.length = len + 1;
 	transmission.progress = 0;

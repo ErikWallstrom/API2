@@ -10,6 +10,7 @@ struct InputHandler* inputhandler_ctor(struct InputHandler* self)
 	self->keystate = SDL_GetKeyboardState(NULL);
 	self->mousestate = SDL_GetMouseState(&self->mousex, &self->mousey);
 
+	//TODO: Implement support for multiple controllers
 	if(SDL_NumJoysticks() && SDL_IsGameController(0)) //Uses the first one
 	{
 		self->controller = SDL_GameControllerOpen(0);

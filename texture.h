@@ -28,6 +28,7 @@ struct Texture* texture_copy(
 	struct Texture* dest, 
 	SDL_Renderer* renderer
 );
+//Implement texture_render?
 void texture_dtor(struct Texture* self);
 
 #endif

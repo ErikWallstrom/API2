@@ -9,6 +9,12 @@
 #define BTCLIENT_BUFSIZE 256
 #define BTCLIENT_MAXNAMELENGTH 32 //NOTE: Arbitrary chosen
 
+struct BTClient;
+typedef void(*BTClientDisconnect)(
+	struct BTClient* client, 
+	void* userdata
+);
+
 struct BTClientTransmission
 {
 	char buffer[BTCLIENT_BUFSIZE];
@@ -21,6 +27,8 @@ struct BTClient
 	char name[BTCLIENT_MAXNAMELENGTH];
 	struct BTClientTransmission delivery;
 	char addr[BTCLIENT_ADDRLENGTH];
+	BTClientDisconnect ondisconnect;
+	void* userdata;
 	Vec(struct BTClientTransmission) sendqueue;
 	int socket;
 };
@@ -28,7 +36,9 @@ struct BTClient
 struct BTClient* btclient_ctor(
 	struct BTClient* self, 
 	const char* addr,
-	int isname
+	int isname,
+	BTClientDisconnect ondisconnect,
+	void* userdata
 );
 void btclient_update(struct BTClient* self);
 void btclient_send(struct BTClient* self, const char* msg, uint8_t len);

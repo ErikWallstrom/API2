@@ -9,13 +9,19 @@
 #include <fcntl.h>
 #include <errno.h>
 
-struct BTServer* btserver_ctor(struct BTServer* self, size_t maxclients)
+struct BTServer* btserver_ctor(
+	struct BTServer* self, 
+	size_t maxclients,
+	BTServerConnect onconnect, 
+	void* userdata)
 {
 	log_assert(self, "is NULL");
 	log_assert(maxclients, "is 0");
 
 	self->maxclients = maxclients;
 	self->clients = vec_ctor(struct BTClient, maxclients);
+	self->onconnect = onconnect;
+	self->userdata = userdata;
 
 	self->socket = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	if(self->socket == -1)
@@ -26,7 +32,8 @@ struct BTServer* btserver_ctor(struct BTServer* self, size_t maxclients)
 	struct sockaddr_rc addr = {
 		.rc_family = AF_BLUETOOTH,
 		.rc_bdaddr = *BDADDR_ANY,
-		.rc_channel = 1
+		.rc_channel = 1 //Should this be modifiable? 
+						//Set to 0 to get first available
 	};
 
 	int result = bind(self->socket, (struct sockaddr*)&addr, sizeof addr);
@@ -73,11 +80,25 @@ struct BTServer* btserver_ctor(struct BTServer* self, size_t maxclients)
 	return self;
 }
 
+static void ondisconnect(struct BTClient* client, void* userdata)
+{
+	struct BTServer* server = userdata;
+	log_info("%s [%s] disconnected!", client->addr, client->name);
+	for(size_t i = 0; i < vec_getsize(server->clients); i++)
+	{
+		if(&server->clients[i] == client) 
+		{
+			btclient_dtor(client);
+			server->clients[i].socket = -1;
+		}
+	}
+}
+
 void btserver_update(struct BTServer* self)
 {
 	log_assert(self, "is NULL");
 
-	if(vec_getsize(self->clients) < self->maxclients)
+	if(vec_getsize(self->clients) < self->maxclients) //TODO: Handle server full
 	{
 		struct sockaddr_rc addr;
 		int client = accept(
@@ -88,6 +109,7 @@ void btserver_update(struct BTServer* self)
 
 		if(client == -1)
 		{
+			log_assert(EWOULDBLOCK == EAGAIN, "fix");
 			if(errno != EWOULDBLOCK && errno != EAGAIN)
 			{
 				log_error("%s", strerror(errno));
@@ -105,6 +127,8 @@ void btserver_update(struct BTServer* self)
 			serverclient.socket = client;
 			serverclient.sendqueue = vec_ctor(struct BTClientTransmission, 0);
 			serverclient.delivery.length = 0; //No incoming delivery 
+			serverclient.ondisconnect = ondisconnect;
+			serverclient.userdata = self;
 			ba2str(&addr.rc_bdaddr, serverclient.addr);
 			result = hci_read_remote_name(
 				self->devicesocket,
@@ -118,18 +142,40 @@ void btserver_update(struct BTServer* self)
 				strcpy(serverclient.name, "Unknown");
 			}
 
-			vec_pushback(self->clients, serverclient);
-			log_info(
-				"User connected from %s [%s]", 
-				serverclient.addr,
-				serverclient.name
-			);
+			if(self->onconnect)
+			{
+				result = self->onconnect(
+					self, 
+					&serverclient, 
+					self->userdata
+				);
+				if(result)
+				{
+					vec_pushback(self->clients, serverclient);
+				}
+				else
+				{
+					btclient_dtor(&serverclient);
+				}
+			}
+			else //Should this be possible?
+			{
+				vec_pushback(self->clients, serverclient);
+			}
 		}
 	}
 
 	for(size_t i = 0; i < vec_getsize(self->clients); i++)
 	{
 		btclient_update(&self->clients[i]);
+	}
+
+	for(ssize_t i = vec_getsize(self->clients) - 1; i >= 0; i--)
+	{
+		if(self->clients[i].socket == -1)
+		{
+			vec_remove(self->clients, i);
+		}
 	}
 }
 

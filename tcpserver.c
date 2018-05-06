@@ -10,7 +10,9 @@
 struct TCPServer* tcpserver_ctor(
 	struct TCPServer* self, 
 	uint16_t port, 
-	size_t maxclients)
+	size_t maxclients,
+	TCPServerConnect onconnect,
+	void* userdata)
 {
 	log_assert(self, "is NULL");
 	log_assert(maxclients, "is 0");
@@ -18,6 +20,8 @@ struct TCPServer* tcpserver_ctor(
 	self->port = port;
 	self->maxclients = maxclients;
 	self->clients = vec_ctor(struct TCPClient, maxclients);
+	self->onconnect = onconnect;
+	self->userdata = userdata;
 
 	self->socket = socket(AF_INET, SOCK_STREAM, 0);
 	if(self->socket == -1)
@@ -97,6 +101,8 @@ void tcpserver_update(struct TCPServer* self)
 			serverclient.socket = client;
 			serverclient.sendqueue = vec_ctor(struct TCPClientTransmission, 0);
 			serverclient.delivery.length = 0; //No incoming delivery 
+			serverclient.ondisconnect = NULL;
+			serverclient.userdata = NULL;
 			sprintf(serverclient.port, "%i", ntohs(addr.sin_port));
 			inet_ntop(
 				AF_INET, 
@@ -104,12 +110,26 @@ void tcpserver_update(struct TCPServer* self)
 				serverclient.ip, 
 				sizeof serverclient.ip
 			);
-			vec_pushback(self->clients, serverclient);
-			log_info(
-				"User connected from %s:%s", 
-				serverclient.ip, 
-				serverclient.port
-			);
+			if(self->onconnect)
+			{
+				result = self->onconnect(
+					self, 
+					&serverclient, 
+					self->userdata
+				);
+				if(result)
+				{
+					vec_pushback(self->clients, serverclient);
+				}
+				else
+				{
+					tcpclient_dtor(&serverclient);
+				}
+			}
+			else //Should this be possible?
+			{
+				vec_pushback(self->clients, serverclient);
+			}
 		}
 	}
 

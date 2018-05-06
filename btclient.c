@@ -11,12 +11,14 @@
 #include <errno.h>
 
 #define BTCLIENT_MAXNUMINFO 32 //NOTE: Arbitrarily chosen
-#define BTCLIENT_SEARCHTIME 5 //Search for 1.28 * 5 sec
+#define BTCLIENT_SEARCHTIME 4 //Search for 1.28 * BTCLIENT_SEARCHTIME sec
 
 struct BTClient* btclient_ctor(
 	struct BTClient* self, 
 	const char* addr, 
-	int isname)
+	int isname,
+	BTClientDisconnect ondisconnect,
+	void* userdata)
 {
 	log_assert(self, "is NULL");
 	log_assert(addr, "is NULL");
@@ -138,13 +140,56 @@ struct BTClient* btclient_ctor(
 
 	self->sendqueue = vec_ctor(struct BTClientTransmission, 0);
 	self->delivery.length = 0; //No incoming delivery 
-
+	self->ondisconnect = ondisconnect;
+	self->userdata = userdata;
 	return self;
 }
 
 void btclient_update(struct BTClient* self)
 {
 	log_assert(self, "is NULL");
+
+	if(!self->delivery.length)
+	{
+		int result = recv(
+			self->socket, 
+			self->delivery.buffer, 
+			BTCLIENT_BUFSIZE,
+			MSG_PEEK
+		);
+		if(result == -1)
+		{
+			if(errno != EAGAIN && errno != EWOULDBLOCK)
+			{
+				if(self->ondisconnect)
+				{
+					self->ondisconnect(self, self->userdata);
+					return;
+				}
+				else
+				{
+					log_error("%s", strerror(errno));
+				}
+			}
+		}
+		else if(result == 0)
+		{
+			if(self->ondisconnect)
+			{
+				self->ondisconnect(self, self->userdata);
+				return;
+			}
+			else
+			{
+				log_error("Disconnected (%s)", strerror(errno));
+			}
+		}
+		else
+		{
+			self->delivery.length = (uint8_t)self->delivery.buffer[0];
+			self->delivery.progress = 0;
+		}
+	}
 
 	if(self->delivery.length)
 	{
@@ -165,43 +210,33 @@ void btclient_update(struct BTClient* self)
 			{
 				if(errno != EAGAIN && errno != EWOULDBLOCK)
 				{
-					log_error("%s", strerror(errno));
+					if(self->ondisconnect)
+					{
+						self->ondisconnect(self, self->userdata);
+						return;
+					}
+					else
+					{
+						log_error("%s", strerror(errno));
+					}
 				}
 			}
 			else if(result == 0)
 			{
-				log_error("%s disconnected", self->addr);
+				if(self->ondisconnect)
+				{
+					self->ondisconnect(self, self->userdata);
+					return;
+				}
+				else
+				{
+					log_error("Disconnected (%s)", strerror(errno));
+				}
 			}
 			else
 			{
 				self->delivery.progress += result;
 			} 
-		}
-	}
-	else
-	{
-		int result = recv(
-			self->socket, 
-			self->delivery.buffer, 
-			BTCLIENT_BUFSIZE,
-			0
-		);
-		if(result == -1)
-		{
-			if(errno != EAGAIN && errno != EWOULDBLOCK)
-			{
-				log_error("%s", strerror(errno));
-			}
-		}
-		else if(result == 0)
-		{
-			log_error("%s disconnected", self->addr);
-		}
-		else
-		{
-			self->delivery.length = (uint8_t)self->delivery.buffer[0];
-			self->delivery.progress = 0;
-			self->delivery.progress += result;
 		}
 	}
 
@@ -229,7 +264,15 @@ void btclient_update(struct BTClient* self)
 			{
 				if(errno != EAGAIN && errno != EWOULDBLOCK)
 				{
-					log_error("%s", strerror(errno));
+					if(self->ondisconnect)
+					{
+						self->ondisconnect(self, self->userdata);
+						return;
+					}
+					else
+					{
+						log_error("%s", strerror(errno));
+					}
 				}
 			}
 			else
@@ -249,7 +292,7 @@ void btclient_send(struct BTClient* self, const char* msg, uint8_t len)
 	log_assert(len > 0, "invalid length");
 
 	struct BTClientTransmission transmission;
-	strcpy(transmission.buffer + 1, msg);
+	memcpy(transmission.buffer + 1, msg, len);
 	transmission.buffer[0] = len + 1;
 	transmission.length = len + 1;
 	transmission.progress = 0;

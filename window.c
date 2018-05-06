@@ -14,6 +14,7 @@ struct Window* window_ctor(
 	log_assert(width > 0, "invalid width");
 	log_assert(height > 0, "invalid height");
 
+	//TODO: Implement resizeable 
 	self->raw = SDL_CreateWindow(
 		title,
 		SDL_WINDOWPOS_UNDEFINED,
@@ -61,6 +62,7 @@ struct Window* window_ctor(
 void window_render(struct Window* self)
 {
 	log_assert(self, "is NULL");
+
 	SDL_RenderPresent(self->renderer);
 	SDL_RenderClear(self->renderer);
 
