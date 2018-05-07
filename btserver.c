@@ -13,6 +13,7 @@ struct BTServer* btserver_ctor(
 	struct BTServer* self, 
 	size_t maxclients,
 	BTServerConnect onconnect, 
+	BTServerDisconnect ondisconnect, 
 	void* userdata)
 {
 	log_assert(self, "is NULL");
@@ -21,6 +22,7 @@ struct BTServer* btserver_ctor(
 	self->maxclients = maxclients;
 	self->clients = vec_ctor(struct BTClient, maxclients);
 	self->onconnect = onconnect;
+	self->ondisconnect = ondisconnect;
 	self->userdata = userdata;
 
 	self->socket = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
@@ -83,7 +85,11 @@ struct BTServer* btserver_ctor(
 static void ondisconnect(struct BTClient* client, void* userdata)
 {
 	struct BTServer* server = userdata;
-	log_info("%s [%s] disconnected!", client->addr, client->name);
+	if(server->ondisconnect)
+	{
+		server->ondisconnect(server, client, server->userdata);
+	}
+
 	for(size_t i = 0; i < vec_getsize(server->clients); i++)
 	{
 		if(&server->clients[i] == client) 

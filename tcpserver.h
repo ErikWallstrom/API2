@@ -11,10 +11,16 @@ typedef int(*TCPServerConnect)(
 	struct TCPClient* client, 
 	void* userdata
 );
+typedef void(*TCPServerDisconnect)(
+	struct TCPServer* server,
+	struct TCPClient* client,
+	void* userdata
+);
 
 struct TCPServer
 {
 	TCPServerConnect onconnect;
+	TCPServerDisconnect ondisconnect;
 	void* userdata;
 	Vec(struct TCPClient) clients;
 	size_t maxclients;
@@ -27,6 +33,7 @@ struct TCPServer* tcpserver_ctor(
 	uint16_t port, 
 	size_t maxclients,
 	TCPServerConnect onconnect,
+	TCPServerDisconnect ondisconnect,
 	void* userdata
 );
 void tcpserver_update(struct TCPServer* self);

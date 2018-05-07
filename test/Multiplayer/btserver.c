@@ -8,6 +8,14 @@ static void onerror(void* userdata)
 	abort();
 }
 
+void ondisconnect(
+	struct BTServer* server, 
+	struct BTClient* client, 
+	void* userdata)
+{
+	log_info("%s [%s] disconnected!", client->addr, client->name);
+}
+
 int onconnect(struct BTServer* server, struct BTClient* client, void* userdata)
 {
 	log_info("%s [%s] connected!", client->addr, client->name);
@@ -19,7 +27,7 @@ int main(void)
 	log_seterrorhandler(onerror, NULL);
 
 	struct BTServer server;
-	btserver_ctor(&server, 4, onconnect, NULL);
+	btserver_ctor(&server, 4, onconnect, ondisconnect,  NULL);
 	log_info("Listening [%s]", server.name);
 
 	while(1)

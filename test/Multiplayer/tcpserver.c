@@ -8,6 +8,14 @@ static void onerror(void* userdata)
 	abort();
 }
 
+void ondisconnect(
+	struct TCPServer* server, 
+	struct TCPClient* client, 
+	void* userdata)
+{
+	log_info("%s:%s disconnected!", client->ip, client->port);
+}
+
 int onconnect(struct TCPServer* server, struct TCPClient* client, void* userdata)
 {
 	log_info("%s:%s connected!", client->ip, client->port);
@@ -19,7 +27,7 @@ int main(void)
 	log_seterrorhandler(onerror, NULL);
 
 	struct TCPServer server;
-	tcpserver_ctor(&server, 25565, 4, onconnect, NULL);
+	tcpserver_ctor(&server, 25565, 4, onconnect, ondisconnect, NULL);
 	log_info("Listening [%i]", server.port);
 
 	while(1)

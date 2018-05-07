@@ -12,6 +12,7 @@ struct TCPServer* tcpserver_ctor(
 	uint16_t port, 
 	size_t maxclients,
 	TCPServerConnect onconnect,
+	TCPServerDisconnect ondisconnect,
 	void* userdata)
 {
 	log_assert(self, "is NULL");
@@ -21,6 +22,7 @@ struct TCPServer* tcpserver_ctor(
 	self->maxclients = maxclients;
 	self->clients = vec_ctor(struct TCPClient, maxclients);
 	self->onconnect = onconnect;
+	self->ondisconnect = ondisconnect;
 	self->userdata = userdata;
 
 	self->socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -55,6 +57,24 @@ struct TCPServer* tcpserver_ctor(
 	}
 
 	return self;
+}
+
+static void ondisconnect(struct TCPClient* client, void* userdata)
+{
+	struct TCPServer* server = userdata;
+	if(server->ondisconnect)
+	{
+		server->ondisconnect(server, client, server->userdata);
+	}
+
+	for(size_t i = 0; i < vec_getsize(server->clients); i++)
+	{
+		if(&server->clients[i] == client) 
+		{
+			tcpclient_dtor(client);
+			server->clients[i].socket = -1;
+		}
+	}
 }
 
 void tcpserver_update(struct TCPServer* self)
@@ -101,8 +121,8 @@ void tcpserver_update(struct TCPServer* self)
 			serverclient.socket = client;
 			serverclient.sendqueue = vec_ctor(struct TCPClientTransmission, 0);
 			serverclient.delivery.length = 0; //No incoming delivery 
-			serverclient.ondisconnect = NULL;
-			serverclient.userdata = NULL;
+			serverclient.ondisconnect = ondisconnect;
+			serverclient.userdata = self;
 			sprintf(serverclient.port, "%i", ntohs(addr.sin_port));
 			inet_ntop(
 				AF_INET, 
@@ -136,6 +156,14 @@ void tcpserver_update(struct TCPServer* self)
 	for(size_t i = 0; i < vec_getsize(self->clients); i++)
 	{
 		tcpclient_update(&self->clients[i]);
+	}
+
+	for(ssize_t i = vec_getsize(self->clients) - 1; i >= 0; i--)
+	{
+		if(self->clients[i].socket == -1)
+		{
+			vec_remove(self->clients, i);
+		}
 	}
 }
 
