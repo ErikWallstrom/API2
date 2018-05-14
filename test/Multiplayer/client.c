@@ -3,23 +3,22 @@
 #include "../../argparser.h"
 #include "../../tcpclient.h"
 #include "../../gameloop.h"
-#include "../../btclient.h"
 #include "../../window.h"
 #include "../../log.h"
+#include "player.h"
+
+#define NUM_PLAYERS 4
 
 struct Game
 {
-	union {
-		struct BTClient btclient;
-		struct TCPClient tcpclient;
-	};
+	struct Player players[NUM_PLAYERS];
+	struct TCPClient client;
 	struct Window window;
+	struct Vec2d movements[NUM_PLAYERS];
 	struct InputHandler input;
-	int uppressed;
-	int downpressed;
-	int leftpressed;
-	int rightpressed;
-	int isbt;
+	struct Texture spritesheet;
+	int hasmoved[NUM_PLAYERS];
+	uint8_t localplayerid;
 };
 
 static void onargerror(void* udata)
@@ -39,31 +38,33 @@ void update(struct GameLoop* loop, void* userdata)
 	struct Game* game = userdata;
 	for(size_t i = 0; i < 2; i++) //Update twice the game speed
 	{
-		if(game->isbt)
+		tcpclient_update(&game->client);
+		if(tcpclient_recv(&game->client))
 		{
-			btclient_update(&game->btclient);
-			if(btclient_recv(&game->btclient))
-			{
-				
-			}
-		}
-		else
-		{
-			tcpclient_update(&game->tcpclient);
-			if(tcpclient_recv(&game->tcpclient))
-			{
-				
-			}
+			uint8_t playerid = game->client.delivery.buffer[1];
+			int16_t x = *(int16_t*)(game->client.delivery.buffer + 2);
+			int16_t y = *(int16_t*)(game->client.delivery.buffer + 4);
+			float movex = *(float*)(game->client.delivery.buffer + 6);
+			float movey = *(float*)(game->client.delivery.buffer + 10);
+
+			log_info(
+				"Received |%i| (%i, %i) [%f, %f]", 
+				playerid,
+				x, 
+				y, 
+				(double)movex, 
+				(double)movey
+			);
+
+			game->players[playerid].rect.pos.x = (double)x;
+			game->players[playerid].rect.pos.y = (double)y;
+			game->movements[playerid].x = (double)movex;
+			game->movements[playerid].y = (double)movey;
+			game->hasmoved[playerid] = 0;
 		}
 	}
 
 	inputhandler_update(&game->input);
-
-	int oldup = game->uppressed;
-	int olddown = game->downpressed;
-	int oldleft = game->leftpressed;
-	int oldright = game->rightpressed;
-
 	for(size_t i = 0; i < vec_getsize(game->input.events); i++)
 	{
 		switch(game->input.events[i].type)
@@ -78,77 +79,133 @@ void update(struct GameLoop* loop, void* userdata)
 			case SDLK_q:
 				loop->done = 1;
 				break;
-
-			case SDLK_w:
-				game->uppressed = 1;
-				break;
-			case SDLK_s:
-				game->downpressed = 1;
-				break;
-			case SDLK_a:
-				game->leftpressed = 1;
-				break;
-			case SDLK_d:
-				game->rightpressed = 1;
-				break;
-			}
-			break;
-
-		case SDL_KEYUP:
-			switch(game->input.events[i].key.keysym.sym)
-			{
-			case SDLK_w:
-				game->uppressed = 0;
-				break;
-			case SDLK_s:
-				game->downpressed = 0;
-				break;
-			case SDLK_a:
-				game->leftpressed = 0;
-				break;
-			case SDLK_d:
-				game->rightpressed = 0;
-				break;
 			}
 			break;
 		}
 	}
 
-	if(oldup != game->uppressed
-		|| olddown != game->downpressed 
-		|| oldleft != game->leftpressed
-		|| oldright != game->rightpressed)
+	struct Vec2d movement = {0};
+	if(game->input.keystate[SDL_SCANCODE_A]
+		|| game->input.keystate[SDL_SCANCODE_H] 
+		|| game->input.keystate[SDL_SCANCODE_LEFT] 
+		|| SDL_GameControllerGetButton(
+			game->input.controller,
+			SDL_CONTROLLER_BUTTON_DPAD_LEFT))
 	{
-		char buffer[4];
-		buffer[0] = game->uppressed;
-		buffer[1] = game->downpressed;
-		buffer[2] = game->leftpressed;
-		buffer[3] = game->rightpressed;
+		movement.x += -1.0;
+	}
+	if(game->input.keystate[SDL_SCANCODE_D]
+		|| game->input.keystate[SDL_SCANCODE_L] 
+		|| game->input.keystate[SDL_SCANCODE_RIGHT] 
+		|| SDL_GameControllerGetButton(
+			game->input.controller,
+			SDL_CONTROLLER_BUTTON_DPAD_RIGHT))
+	{
+		movement.x += 1.0;
+	}
+	if(game->input.keystate[SDL_SCANCODE_W]
+		|| game->input.keystate[SDL_SCANCODE_K] 
+		|| game->input.keystate[SDL_SCANCODE_UP] 
+		|| SDL_GameControllerGetButton(
+			game->input.controller,
+			SDL_CONTROLLER_BUTTON_DPAD_UP))
+	{
+		movement.y += -1.0;
+	}
+	if(game->input.keystate[SDL_SCANCODE_S]
+		|| game->input.keystate[SDL_SCANCODE_J] 
+		|| game->input.keystate[SDL_SCANCODE_DOWN] 
+		|| SDL_GameControllerGetButton(
+			game->input.controller,
+			SDL_CONTROLLER_BUTTON_DPAD_DOWN))
+	{
+		movement.y += 1.0;
+	}
 
-		log_info("Sending state!");
-		if(game->isbt)
+	int16_t xaxis = SDL_GameControllerGetAxis(
+		game->input.controller, 
+		SDL_CONTROLLER_AXIS_LEFTX
+	);
+	if(xaxis > 0)
+	{
+		movement.x += 1.0;
+	}
+	else if(xaxis < 0)
+	{
+		movement.x += -1.0;
+	}
+
+	int16_t yaxis = SDL_GameControllerGetAxis(
+		game->input.controller, 
+		SDL_CONTROLLER_AXIS_LEFTY
+	);
+	if(yaxis > 0)
+	{
+		movement.y += 1.0;
+	}
+	else if(yaxis < 0)
+	{
+		movement.y += -1.0;
+	}
+
+	vec2d_normalize(&movement, &movement);
+	game->players[game->localplayerid].direction = movement;
+	for(size_t i = 0; i < NUM_PLAYERS; i++)
+	{
+		if(i != game->localplayerid)
 		{
-			btclient_send(&game->btclient, buffer, 4);
+			if(game->hasmoved[i])
+			{
+				game->players[i].direction = game->movements[i];
+			}
+			else
+			{
+				game->hasmoved[i] = 1;
+			}
 		}
-		else
-		{
-			tcpclient_send(&game->tcpclient, buffer, 4);
-		}
+
+		player_update(&game->players[i]);
+	}
+
+	if(game->movements[game->localplayerid].x != movement.x 
+		|| game->movements[game->localplayerid].y != movement.y)
+	{
+		game->movements[game->localplayerid] = movement;
+
+		char buffer[sizeof(int16_t) * 2 + sizeof(float) * 2];
+		//NOTE: Not using network byte order
+		*(int16_t*)(buffer + 0) = (int16_t)game->players[game->localplayerid]
+			.rect.pos.x;
+		*(int16_t*)(buffer + 2) = (int16_t)game->players[game->localplayerid]
+			.rect.pos.y;
+		*(float*)(buffer + 4) = (float)movement.x;
+		*(float*)(buffer + 8) = (float)movement.y;
+
+		log_info(
+			"Sending (%i, %i) [%f, %f]",
+			*(int16_t*)(buffer),
+			*(int16_t*)(buffer + 2),
+			(double)*(float*)(buffer + 4),
+			(double)*(float*)(buffer + 8)
+		);
+		tcpclient_send(&game->client, buffer, sizeof buffer);
 	}
 }
 
 void render(struct GameLoop* loop, void* userdata)
 {
 	struct Game* game = userdata;
+	for(size_t i = 0; i < NUM_PLAYERS; i++)
+	{
+		player_render(
+			&game->players[i], 
+			&game->spritesheet, 
+			game->window.renderer
+		);
+	}
+
 	SDL_SetRenderDrawColor(game->window.renderer, 0, 255, 255, 255);
 	window_render(&game->window);
-}
-
-void onbtdisconnect(struct BTClient* client, void* userdata)
-{
-	(void)userdata;
-	log_info("Disconnected");
-	abort();
 }
 
 void ontcpdisconnect(struct TCPClient* client, void* userdata)
@@ -160,18 +217,10 @@ void ontcpdisconnect(struct TCPClient* client, void* userdata)
 
 int main(int argc, char* argv[])
 {
-	struct Game game;
-	game.uppressed = 0;
-	game.downpressed = 0;
-	game.leftpressed = 0;
-	game.rightpressed = 0;
-
 	int windowflags = WINDOW_DEFAULT;
 	struct ArgParserLongOpt options[] = {
 		{"disable-vsync", "Disable vsync. May decrease input lag", 0},
 		{"windowed", "Disable fullscreen", 0},
-		{"bt-addr", "Connect to host with bluetooth address", 1},
-		{"bt-name", "Connect to host with bluetooth name", 1},
 		{"ip", "The ip of the host", 1},
 		{"port", "The port of the host", 1},
 	};
@@ -196,64 +245,37 @@ int main(int argc, char* argv[])
 		windowflags |= WINDOW_FULLSCREEN;
 	}
 
-	if(argparser.results[2].used && argparser.results[3].used)
+	if(!argparser.results[2].used && !argparser.results[3].used)
 	{
 		log_error(
-			"%s and %s cannot be used at the same time",
+			"%s and %s has to be specified", 
 			options[2].opt, 
 			options[3].opt
 		);
 	}
-	else if(!argparser.results[2].used 
-		&& !argparser.results[3].used
-		&& !(argparser.results[4].used && argparser.results[5].used))
-	{
-		log_error(
-			"Either %s, %s or %s and %s has to be specified", 
-			options[2].opt, 
-			options[3].opt,
-			options[4].opt,
-			options[5].opt
-		);
-	}
 
 	log_seterrorhandler(onerror, NULL);
-	if(argparser.results[2].used)
+	struct Game game;
+	memset(game.movements, 0, sizeof game.movements);
+	memset(game.hasmoved, 0, sizeof game.hasmoved);
+	tcpclient_ctor(
+		&game.client,
+		argparser.results[2].arg,
+		argparser.results[3].arg,
+		ontcpdisconnect,
+		NULL
+	);
+
+	while(1)
 	{
-		game.isbt = 1;
-		btclient_ctor(
-			&game.btclient, 
-			argparser.results[2].arg, 
-			0, 
-			onbtdisconnect, 
-			NULL
-		);
-	}
-	else if(argparser.results[3].used)
-	{
-		game.isbt = 1;
-		btclient_ctor(
-			&game.btclient, 
-			argparser.results[3].arg, 
-			1, 
-			onbtdisconnect, 
-			NULL
-		);
-	}
-	else if(argparser.results[4].used && argparser.results[5].used)
-	{
-		game.isbt = 0;
-		tcpclient_ctor(
-			&game.tcpclient,
-			argparser.results[4].arg,
-			argparser.results[5].arg,
-			ontcpdisconnect,
-			NULL
-		);
-	}
-	else
-	{
-		log_assert(0, "should'n happen'");
+		tcpclient_update(&game.client);
+		if(tcpclient_recv(&game.client))
+		{
+			game.localplayerid = (uint8_t)game.client.delivery.buffer[1];
+			break;
+		}
+
+		gameloop_sleep(1);
 	}
 
 	argparser_dtor(&argparser);
@@ -270,19 +292,30 @@ int main(int argc, char* argv[])
 		(struct GameLoopCallback){render, &game}
 	);
 
+	texture_ctorimage(
+		&game.spritesheet, 
+		"resources/sprites.png", 
+		game.window.renderer
+	);
+
+	for(size_t i = 0; i < NUM_PLAYERS; i++)
+	{
+		player_ctor(
+			&game.players[i], 
+			(struct Vec2d){
+				.x = game.window.width / 2.0, 
+				.y = game.window.height / 2.0
+			},
+			&loop
+		);
+	}
+
 	gameloop_start(&loop);
 	gameloop_dtor(&loop);
 	inputhandler_dtor(&game.input);
 	window_dtor(&game.window);
 	cleanup();
 
-	if(game.isbt)
-	{
-		btclient_dtor(&game.btclient);
-	}
-	else
-	{
-		tcpclient_dtor(&game.tcpclient);
-	}
+	tcpclient_dtor(&game.client);
 }
 

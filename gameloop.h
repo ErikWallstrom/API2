@@ -55,6 +55,8 @@ GameLoopCallbackID gameloop_addcallback(
 	double delay
 );
 void gameloop_removecallback(struct GameLoop* self, GameLoopCallbackID id);
+void gameloop_yield(void);
+void gameloop_sleep(size_t ms);
 void gameloop_dtor(struct GameLoop* self);
 
 #endif

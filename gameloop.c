@@ -1,6 +1,7 @@
 #include "gameloop.h"
 #include "log.h"
 #include <time.h>
+#include <sched.h>
 
 static uint64_t getperformancefreq(void)
 {
@@ -104,6 +105,10 @@ void gameloop_start(struct GameLoop* self)
 			self->tickscount = 0;
 			self->fps = self->framescount;
 			self->framescount = 0;
+
+			#ifndef NDEBUG
+			log_info("FPS: %li, TICKS: %li", self->fps, self->ticks);
+			#endif
 		}
 	}
 }
@@ -139,6 +144,19 @@ void gameloop_removecallback(struct GameLoop* self, GameLoopCallbackID id)
 
 	//NOTE: Memory will not be freed
 	self->timedcallbacks[id].active = 0;
+}
+
+void gameloop_yield(void)
+{
+	sched_yield(); //NOTE: No error handling
+}
+
+void gameloop_sleep(size_t ms)
+{
+	struct timespec spec;
+	spec.tv_nsec = ms * 1000 * 1000;
+	spec.tv_sec = 0;
+	nanosleep(&spec, NULL);
 }
 
 void gameloop_dtor(struct GameLoop* self)
