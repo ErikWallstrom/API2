@@ -44,12 +44,17 @@ void onerror(void* userdata)
 	abort();
 }
 
+void ondisconnect(struct BTClient* client, void* userdata)
+{
+	log_info("Disconnected");
+}
+
 int main(void)
 {
 	log_seterrorhandler(onerror, NULL);
 
 	struct BTClient client;
-	btclient_ctor(&client, "frida-laptop", 1);
+	btclient_ctor(&client, "frida-laptop", 1, ondisconnect, NULL);
 	
 	log_info("Connected to %s [%s]!", client.addr, client.name);
 	struct GameLoop loop;

@@ -29,11 +29,11 @@ struct GameLoop
 	struct GameLoopCallback render;
 	uint64_t oldtime;
 	uint64_t curtime;
-	uint64_t tickscount;
-	uint64_t framescount;
-	uint64_t fps;
-	uint64_t ticks;
-	uint64_t seconds;
+	size_t tickscount;
+	size_t framescount;
+	size_t fps;
+	size_t ticks;
+	size_t seconds;
 	double lag;
 	double delta;
 	double interpolation;

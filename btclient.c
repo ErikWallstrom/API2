@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #define BTCLIENT_MAXNUMINFO 32 //NOTE: Arbitrarily chosen
-#define BTCLIENT_SEARCHTIME 4 //Search for 1.28 * BTCLIENT_SEARCHTIME sec
+#define BTCLIENT_SEARCHTIME 5 //Search for 1.28 * BTCLIENT_SEARCHTIME sec
 
 struct BTClient* btclient_ctor(
 	struct BTClient* self, 

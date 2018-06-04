@@ -107,7 +107,7 @@ void gameloop_start(struct GameLoop* self)
 			self->framescount = 0;
 
 			#ifndef NDEBUG
-			log_info("FPS: %li, TICKS: %li", self->fps, self->ticks);
+			log_info("FPS: %zu, TICKS: %zu", self->fps, self->ticks);
 			#endif
 		}
 	}

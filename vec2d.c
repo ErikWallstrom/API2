@@ -76,3 +76,19 @@ void vec2d_normalize(struct Vec2d* self, struct Vec2d* dest)
 	}
 }
 
+void vec2d_lerp(
+	struct Vec2d* self, 
+	struct Vec2d* vec, 
+	double alpha, 
+	struct Vec2d* dest)
+{
+	log_assert(self, "is NULL");
+	log_assert(vec, "is NULL");
+	log_assert(alpha <= 1.0, "invalid (%f)", alpha);
+	log_assert(alpha >= 0.0, "invalid (%f)", alpha);
+	log_assert(dest, "is NULL");
+
+	dest->x = (1.0 - alpha) * vec->x + alpha * self->x;
+	dest->y = (1.0 - alpha) * vec->y + alpha * self->y;
+}
+

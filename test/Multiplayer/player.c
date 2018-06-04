@@ -4,7 +4,7 @@
 #define PLAYER_WIDTH 	10.0
 #define PLAYER_HEIGHT 	16.0
 #define PLAYER_SCALE 	4.0
-#define PLAYER_SPEED 	200.0
+#define PLAYER_SPEED 	400.0
 
 const struct Vec2d player_standingfront[PLAYER_STANDINGCOUNT] = {
 	{.x = 0.0, .y = 0.0}
@@ -178,15 +178,21 @@ void player_render(
 	log_assert(self, "is NULL");
 	
 	struct Vec2d srect = self->animation[self->frame];
+	struct Vec2d renderpos;
+	vec2d_lerp(
+		&self->rect.pos, 
+		&self->oldpos, 
+		self->loop->interpolation, 
+		&renderpos
+	);
+
 	SDL_RenderCopy(
 		renderer,
 		spritesheet->raw,
 		&(SDL_Rect){srect.x, srect.y, PLAYER_WIDTH, PLAYER_HEIGHT},
 		&(SDL_Rect){
-			self->oldpos.x + (self->rect.pos.x - self->oldpos.x) 
-				* self->loop->interpolation,
-			self->oldpos.y + (self->rect.pos.y - self->oldpos.y)
-				* self->loop->interpolation,
+			renderpos.x,
+			renderpos.y,
 			self->rect.width,
 			self->rect.height
 		}

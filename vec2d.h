@@ -24,5 +24,11 @@ void vec2d_scale(struct Vec2d* self, double scalar, struct Vec2d* dest);
 void vec2d_negate(struct Vec2d* self, struct Vec2d* dest);
 void vec2d_length(struct Vec2d* self, double* dest);
 void vec2d_normalize(struct Vec2d* self, struct Vec2d* dest);
+void vec2d_lerp(
+	struct Vec2d* self, 
+	struct Vec2d* vec, 
+	double alpha, 
+	struct Vec2d* dest
+);
 
 #endif
